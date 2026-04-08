@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, Float, Html, Sparkles } from '@react-three/drei';
 import Avatar from '../components/3d/Avatar';
+import { scale } from 'framer-motion';
 
 export default function GrandRotunda({ config }) {
   const [hoveredGenre, setHoveredGenre] = useState(null);
@@ -9,9 +10,9 @@ export default function GrandRotunda({ config }) {
 
   // Load your GLB assets
   const { scene: compass } = useGLTF('/models/compass_floor.glb');
-  const { scene: romcomDoor } = useGLTF('/models/door_romcom.glb');
-  const { scene: horrorDoor } = useGLTF('/models/door_horror.glb');
-  const { scene: scifiDoor } = useGLTF('/models/door_scifi.glb');
+  const { scene: romcomDoor } = useGLTF('/models/romcom_door2.glb');
+  const { scene: horrorDoor } = useGLTF('/models/horror_door2.glb');
+  const { scene: scifiDoor } = useGLTF('/models/scifi_door2.glb');
 
   // Rotate the compass floor slowly
   useFrame((state, delta) => {
@@ -33,7 +34,8 @@ export default function GrandRotunda({ config }) {
       desc: 'Face the glitches in the dark. Dare to enter?', 
       color: '#760707', 
       model: horrorDoor, 
-      pos: [0, 0, -11] 
+      pos: [0, 0, -11] ,
+      scale: 4.8
     },
     { 
       id: 'scifi', 

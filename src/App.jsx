@@ -1,6 +1,6 @@
 import React, { useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Loader, MeshReflectorMaterial, Environment, OrbitControls } from '@react-three/drei'; // Added OrbitControls
+import { Loader, MeshReflectorMaterial, Environment, OrbitControls } from '@react-three/drei';
 import Entrance from './pages/Entrance';
 import CharacterCreator from './pages/CharacterCreator';
 import GrandRotunda from './pages/GrandRotunda'; 
@@ -15,6 +15,30 @@ function App() {
     hair: null, 
     skin: '#ffdbac' 
   });
+
+  // Dynamic environment settings based on the room
+  const roomSettings = {
+    entrance: { 
+      bg: '#160101', 
+      fogNear: 5, 
+      fogFar: 25, 
+      camPos: [2, 7, 13] 
+    },
+    customize: { 
+      bg: '#050000', 
+      fogNear: 2, 
+      fogFar: 15, 
+      camPos: [0, 4, 10] 
+    },
+    hub: { 
+      bg: '#1f1919', 
+      fogNear: 10, 
+      fogFar: 40, 
+      camPos: [0, 5, 12] 
+    }
+  };
+
+  const currentSettings = roomSettings[step] || roomSettings.hub;
 
   const handleSearch = (val) => {
     console.log("Searching TMDB for:", val);
@@ -46,7 +70,6 @@ function App() {
 
       {step === 'hub' && (
         <>
-          {/* ENHANCED SOCIAL FEED */}
           <div style={sidePanelStyle}>
             <h4 style={panelHeader}>CINE-SOCIAL</h4>
             <div style={feedItem}>
@@ -63,7 +86,6 @@ function App() {
             </div>
           </div>
 
-          {/* COOLER & HIGHER SEARCH BAR */}
           <div style={searchWrapper}>
              <input 
                type="text" 
@@ -76,21 +98,35 @@ function App() {
         </>
       )}
       
-      {/* 3D LAYER */}
-      <Canvas shadows camera={{ position: [0, 5, 10], fov: 50 }}>
-        <color attach="background" args={['#0a0000']} />
-        
-        {/* User Controls - Handled by OrbitControls now */}
-        {step === 'hub' && <OrbitControls enablePan={false} maxPolarAngle={Math.PI / 2.1} minDistance={5} maxDistance={15} />}
+      <Canvas 
+        shadows 
+        // Camera position now updates when the step changes
+        camera={{ position: currentSettings.camPos, fov: 50 }}
+      >
+        <color attach="background" args={[currentSettings.bg]} />
+        <fog attach="fog" args={[currentSettings.bg, currentSettings.fogNear, currentSettings.fogFar]} />
+
+        {/* OrbitControls enabled only in the hub for free movement */}
+        {step === 'hub' && (
+          <OrbitControls 
+            enablePan={false} 
+            maxPolarAngle={Math.PI / 2.1} 
+            minDistance={5} 
+            maxDistance={20} 
+          />
+        )}
 
         <Suspense fallback={null}>
           <ambientLight intensity={0.4} />
-          <spotLight position={[0, 10, 0]} intensity={20} angle={0.5} penumbra={1} castShadow />
+          
+          {/* Main lighting adjusts slightly for the Hub */}
+          <spotLight position={[0, 10, 0]} intensity={step === 'hub' ? 30 : 20} angle={0.5} penumbra={1} castShadow />
 
           {step === 'entrance' && <Entrance />}
           {step === 'customize' && <CharacterCreator config={config} />}
           {step === 'hub' && <GrandRotunda config={config} />}
 
+          {/* Floor remains consistent but changes color with environment */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
             <planeGeometry args={[100, 100]} />
             <MeshReflectorMaterial
@@ -99,7 +135,7 @@ function App() {
               mixBlur={1}
               mixStrength={40}
               roughness={1}
-              color="#110101"
+              color={step === 'hub' ? "#696666" : "#312b2b"}
               metalness={0.5}
             />
           </mesh>
@@ -111,11 +147,7 @@ function App() {
   );
 }
 
-// --- ALL STYLES ---
-
-const customizeHeader = { position: 'absolute', top: '40px', left: '40px', zIndex: 10 };
-const titleStyle = { color: '#fff', fontSize: '2rem', letterSpacing: '10px', fontWeight: '900', textShadow: '0 0 20px rgba(118, 7, 7, 0.5)' };
-
+// Ensure searchWrapper and other new styles are included
 const searchWrapper = { position: 'absolute', top: '30px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: '450px' };
 const searchField = { width: '100%', background: 'rgba(0,0,0,0.8)', border: '1px solid #760707', padding: '15px 30px', color: '#fff', letterSpacing: '4px', outline: 'none', backdropFilter: 'blur(10px)', fontSize: '0.7rem', textAlign: 'center' };
 const searchAccent = { width: '60px', height: '2px', background: '#760707', margin: '0 auto', boxShadow: '0 0 10px #760707' };
@@ -127,8 +159,11 @@ const userRow = { display: 'flex', justifyContent: 'space-between', color: '#fff
 const ratingStyle = { color: '#ffd700', fontSize: '0.65rem' };
 const commentStyle = { color: '#999', fontSize: '0.7rem', margin: 0, fontStyle: 'italic', lineHeight: '1.4' };
 
-// Legacy styles (kept for safety)
-const searchGlow = { width: '100%', height: '1px', background: '#760707', boxShadow: '0 0 15px #760707', marginTop: '2px' };
+const customizeHeader = { position: 'absolute', top: '40px', left: '40px', zIndex: 10 };
+const titleStyle = { color: '#fff', fontSize: '2rem', letterSpacing: '10px', fontWeight: '900', textShadow: '0 0 20px rgba(118, 7, 7, 0.5)' };
+
 const subtitleStyle = { color: '#888', letterSpacing: '3px', fontSize: '0.8rem', marginTop: '10px', textTransform: 'uppercase', fontWeight: 'bold' };
+const hubOverlay = { position: 'absolute', top: '10%', width: '100%', textAlign: 'center', zIndex: 10, pointerEvents: 'none' };
+const hubTitle = { color: '#fff', fontSize: '1.5rem', letterSpacing: '15px', fontWeight: 'bold' };
 
 export default App;
