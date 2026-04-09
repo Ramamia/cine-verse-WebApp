@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, Float, Html, Sparkles } from '@react-three/drei';
-import Avatar from '../components/3d/Avatar';
 
 export default function GrandRotunda({ config }) {
   const [hoveredGenre, setHoveredGenre] = useState(null);
@@ -129,10 +128,9 @@ React.useEffect(() => {
         </group>
       ))}
 
-      {/* 4. PLAYER AVATAR */}
-      <group position={[0, -1, -1]} rotation={[0, Math.PI, 0]}>
+      {/* <group position={[0, -1, -1]} rotation={[0, Math.PI, 0]}>
         <Avatar config={config} />
-      </group>
+      </group> */}
 
       <Sparkles count={200} scale={25} size={1.5} speed={0.6} color="#760707" />
     </group>

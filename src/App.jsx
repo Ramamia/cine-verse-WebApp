@@ -48,7 +48,7 @@ function App() {
   const getGenreColor = (genre) => {
   switch(genre) {
     case 'ROM-COM': return '#ff69b4';
-    case 'HORROR': return '#760707';
+    case 'HORROR': return '#433636';
     case 'SCI-FI': return '#00d4ff';
     default: return '#760707'; // Cine-Verse Red
   }
@@ -83,7 +83,7 @@ function App() {
           <div style={sidePanelStyle}>
             <h4 style={panelHeader}>CINE-SOCIAL</h4>
             <div style={feedItem}>
-              <div style={userRow}><b>Joudeh</b> <span style={ratingStyle}>★ 4.5</span></div>
+              <div style={userRow}><b>Lara</b> <span style={ratingStyle}>★ 4.5</span></div>
               <p style={commentStyle}>"The twist in Scream 6 blew my mind!"</p>
             </div>
             <div style={feedItem}>
@@ -135,6 +135,30 @@ function App() {
         <color attach="background" args={[currentSettings.bg]} />
         <fog attach="fog" args={[currentSettings.bg, currentSettings.fogNear, currentSettings.fogFar]} />
 
+{step === 'entrance' && (
+  <OrbitControls 
+    enablePan={false}
+    enableZoom={false}
+    enableRotate={true}
+    
+    // 1. PUSH THE CAMERA TO THE BACK OF THE UNIVERSE
+    // If 80 didn't work, we jump to 150-200
+    minDistance={180} 
+    maxDistance={200} 
+
+    // 2. ADJUST THE TARGET
+    // Setting Z to 0 and Y higher to frame the booth from far away
+    target={[-2, 10, 5]}
+
+    // 3. KEEP ROTATION TIGHT
+    minAzimuthAngle={-Math.PI / 16} 
+    maxAzimuthAngle={Math.PI / 16} 
+    minPolarAngle={Math.PI / 2.5} 
+    maxPolarAngle={Math.PI / 2.1} 
+  />
+)}
+
+
         {/* OrbitControls enabled only in the hub for free movement */}
 {step === 'hub' && (
   <OrbitControls 
@@ -142,15 +166,17 @@ function App() {
     // Limits looking up and down significantly
     maxPolarAngle={Math.PI / 2.2} 
     minPolarAngle={Math.PI / 2.5}
-    minDistance={8} 
-    maxDistance={14} 
-    target={[3.5, 3, 2]}
+    minDistance={10} 
+    maxDistance={16} 
+    target={[3.5, 4, 2]}
     enableRotate={true}
     // Limits rotation to a very small left/right nudge
     minAzimuthAngle={-Math.PI / 12} 
     maxAzimuthAngle={Math.PI / 12}
   />
 )}
+
+
 
         <Suspense fallback={null}>
           <ambientLight intensity={0.4} />
