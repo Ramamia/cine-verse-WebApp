@@ -50,7 +50,7 @@ function App() {
           <div style={sidePanelStyle}>
             <h4 style={panelHeader}>CINE-SOCIAL</h4>
             <div style={feedItem}>
-              <div style={userRow}><b>Joudeh</b> <span style={ratingStyle}>★ 4.5</span></div>
+              <div style={userRow}><b>Lara</b> <span style={ratingStyle}>★ 4.5</span></div>
               <p style={commentStyle}>"The twist in Scream 6 blew my mind!"</p>
             </div>
             <div style={feedItem}>

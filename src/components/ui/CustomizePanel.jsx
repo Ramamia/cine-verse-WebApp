@@ -9,7 +9,6 @@ const CustomizePanel = ({ config, setConfig, onFinish }) => {
   const data = {
     ACCESSORIES: [
       { id: 'cowboy', name: 'Cowboy Hat', vid: '/videos/cowboy.mp4' },
-      { id: 'astronaut', name: 'Space Helmet', vid: '/videos/astronaut.mp4' },
       { id: 'glasses', name: 'Cinema Glasses', vid: '/videos/glasses.mp4' },
     ],
     HAIR: [
@@ -18,7 +17,6 @@ const CustomizePanel = ({ config, setConfig, onFinish }) => {
     COLOR: [
       { id: '#cb186c', name: 'Pink' },
       { id: '#06973d', name: 'Green' },
-      { id: '#1d079b', name: 'Blue' },
     ]
   };
 

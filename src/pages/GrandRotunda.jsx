@@ -23,7 +23,7 @@ export default function GrandRotunda({ config }) {
       id: 'romcom', 
       name: 'ROM-COM', 
       desc: 'Love, digital style. Find your cinematic match.', 
-      color: '#ff69b4', 
+      color: 'rgb(160, 31, 117)', 
       model: romcomDoor, 
       pos: [-7, 0, -8] 
     },

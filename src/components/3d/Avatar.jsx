@@ -55,13 +55,9 @@ export default function Avatar({ config, accessories = {} }) {
 
   return (
     <primitive ref={group} object={scene} scale={2.5}>
-      {/* ACCESSORY SLOT SYSTEM - Fixed with .clone() */}
       <group position={[0, 0.65, 0]}>
         {config?.acc === 'cowboy' && accessories.cowboy && (
           <primitive object={accessories.cowboy.clone()} scale={0.15} position={[0, 0.1, 0]} />
-        )}
-        {config?.acc === 'astronaut' && accessories.astronaut && (
-          <primitive object={accessories.astronaut.clone()} scale={0.25} position={[0, 0.05, 0]} />
         )}
         {config?.acc === 'glasses' && accessories.glasses && (
           <primitive object={accessories.glasses.clone()} scale={0.18} position={[0, -0.05, 0.1]} />
