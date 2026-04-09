@@ -1,19 +1,16 @@
 import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, Float, Html, Sparkles } from '@react-three/drei';
-import Avatar from '../components/3d/Avatar';
 
 export default function GrandRotunda({ config }) {
   const [hoveredGenre, setHoveredGenre] = useState(null);
   const compassRef = useRef();
 
-  // Load your GLB assets
   const { scene: compass } = useGLTF('/models/compass_floor.glb');
-  const { scene: romcomDoor } = useGLTF('/models/door_romcom.glb');
-  const { scene: horrorDoor } = useGLTF('/models/door_horror.glb');
-  const { scene: scifiDoor } = useGLTF('/models/door_scifi.glb');
+  const { scene: romcomDoor } = useGLTF('/models/romcom_door2.glb');
+  const { scene: horrorDoor } = useGLTF('/models/horror_door2.glb');
+  const { scene: scifiDoor } = useGLTF('/models/scifi_door2.glb');
 
-  // Rotate the compass floor slowly
   useFrame((state, delta) => {
     if (compassRef.current) compassRef.current.rotation.y += 0.15 * delta;
   });
@@ -25,15 +22,22 @@ export default function GrandRotunda({ config }) {
       desc: 'Love, digital style. Find your cinematic match.', 
       color: '#ff69b4', 
       model: romcomDoor, 
-      pos: [-7, 0, -8] 
+      pos: [-5, 0, -8],
+      scale: 5,
+      rotY: -5.7,
+      lightPos: [0, -1, 3],
+      popupPos: [-1, 5.5, -5]
     },
     { 
       id: 'horror', 
       name: 'HORROR', 
       desc: 'Face the glitches in the dark. Dare to enter?', 
-      color: '#760707', 
+      color: '#433636', 
       model: horrorDoor, 
-      pos: [0, 0, -11] 
+      pos: [-3, 0, -6],
+      rotY: 0,
+      lightPos: [9, 1, 1.2],
+      popupPos: [9, 5.5, 0]
     },
     { 
       id: 'scifi', 
@@ -41,9 +45,22 @@ export default function GrandRotunda({ config }) {
       desc: 'Beyond the code. Explore the future of film.', 
       color: '#00d4ff', 
       model: scifiDoor, 
-      pos: [7, 0, -8] 
+      pos: [0, 0, -11],
+      rotY: 5.9,
+      lightPos: [15.5, 5, 7],
+      popupPos: [15.5, 5.5, 7]
     }
   ];
+React.useEffect(() => {
+  if (compass) {
+    compass.traverse((child) => {
+      if (child.isMesh) {
+        child.material.transparent = true;
+        child.material.opacity = 0.1;
+      }
+    });
+  }
+}, [compass]);
 
   return (
     <group>
@@ -51,11 +68,11 @@ export default function GrandRotunda({ config }) {
       <primitive 
         ref={compassRef} 
         object={compass} 
-        position={[0, 2.9, 10]} 
-        scale={9.2} 
+        position={[4.8, 19, -5]} 
+        scale={30.2} 
       />
 
-      {/* 2. GLB DOORS WITH HOVER LOGIC */}
+      {/* 2. GLB DOORS */}
       {genres.map((g) => (
         <group 
           key={g.id} 
@@ -67,40 +84,54 @@ export default function GrandRotunda({ config }) {
           onPointerOut={() => setHoveredGenre(null)}
           onClick={() => console.log(`Entering ${g.name} Portal...`)}
         >
+          <pointLight 
+            position={g.lightPos || [0, 4, 2]} 
+            intensity={300} 
+            color={g.color} 
+            distance={15} 
+            decay={2} 
+          />
           <Float speed={2.5} rotationIntensity={0.2} floatIntensity={0.6}>
-            <primitive object={g.model.clone()} scale={1.5} />
+            <primitive object={g.model.clone()} scale={2.6} rotation={[0, g.rotY || 0, 0]} />
           </Float>
           
-          {/* 3. COOL GENRE POPUP */}
-// Change the popup return in GrandRotunda.jsx to look sleeker:
-{hoveredGenre?.id === g.id && (
-  <Html distanceFactor={10} position={[0, 4, 0]} center>
-    <div style={{
-      background: 'rgba(0,0,0,0.4)',
-      color: 'white',
-      padding: '15px 25px',
-      borderLeft: `3px solid ${g.color}`,
-      textAlign: 'center',
-      backdropFilter: 'blur(10px)',
-      boxShadow: `0 0 40px ${g.color}33`,
-      width: '180px'
-    }}>
-      <h3 style={{ margin: 0, letterSpacing: '5px', fontSize: '1rem' }}>{g.name}</h3>
-      <h4 style={{ margin: '5px 0', fontSize: '0.75rem', opacity: 0.8  ,fontWeight: 'normal'}}>{g.desc}</h4>
-      <div style={{ height: '1px', background: g.color, margin: '10px 0', opacity: 0.5 }} />
-      <p style={{ fontSize: '0.65rem', opacity: 0.7, margin: 0 , color: g.color , fontWeight: 'bold'}}>ENTER PORTAL</p>
-    </div>
-  </Html>
-)}
+          {/* 3. POPUP ANCHORED TO DOOR */}
+          {hoveredGenre?.id === g.id && (
+            <Html 
+              distanceFactor={10} 
+              /* FIX: [0, height, 0] ensures it is centered horizontally 
+                 on the door even as you move the camera. 
+              */
+              position={g.popupPos || [0, 4, 0]} // Uses the specific X, Y, Z from the array
+              center
+              // occlude={[compass]} // Optional: hides popup if behind objects
+            >
+              <div style={{
+                background: 'rgba(0,0,0,0.6)',
+                color: 'white',
+                padding: '15px 25px',
+                borderLeft: `3px solid ${g.color}`,
+                textAlign: 'center',
+                backdropFilter: 'blur(10px)',
+                boxShadow: `0 0 40px ${g.color}33`,
+                width: '180px',
+                pointerEvents: 'none',
+                userSelect: 'none'
+              }}>
+                <h3 style={{ margin: 0, letterSpacing: '5px', fontSize: '1rem' }}>{g.name}</h3>
+                <h4 style={{ margin: '5px 0', fontSize: '0.75rem', opacity: 0.8, fontWeight: 'normal' }}>{g.desc}</h4>
+                <div style={{ height: '1px', background: g.color, margin: '10px 0', opacity: 0.5 }} />
+                <p style={{ fontSize: '0.65rem', opacity: 0.7, margin: 0, color: g.color, fontWeight: 'bold' }}>ENTER PORTAL</p>
+              </div>
+            </Html>
+          )}
         </group>
       ))}
 
-      {/* 4. PLAYER AVATAR - Center Hub Position */}
-      <group position={[0, -1, -1]} rotation={[0, Math.PI, 0]}>
+      {/* <group position={[0, -1, -1]} rotation={[0, Math.PI, 0]}>
         <Avatar config={config} />
-      </group>
+      </group> */}
 
-      {/* CINEMATIC SPARKLES */}
       <Sparkles count={200} scale={25} size={1.5} speed={0.6} color="#760707" />
     </group>
   );
@@ -108,7 +139,7 @@ export default function GrandRotunda({ config }) {
 
 // --- POPUP STYLES ---
 const popupStyle = (color) => ({
-  background: 'rgba(5, 0, 0, 0.9)',
+  background: 'rgba(5, 0, 0, 0.5)',
   color: 'white',
   padding: '25px',
   borderRadius: '2px',
@@ -119,7 +150,7 @@ const popupStyle = (color) => ({
   boxShadow: `0 10px 30px rgba(0,0,0,0.3), 0 0 15px ${color}33`,
   pointerEvents: 'none',
   fontFamily: '"Courier New", Courier, monospace',
-  transition: '0.3s ease-in-out'
+  transition: '0.2s ease-in-out'
 });
 
 const popupTitle = { margin: '0 0 10px 0', letterSpacing: '5px', fontSize: '1.2rem', fontWeight: 'bold' };

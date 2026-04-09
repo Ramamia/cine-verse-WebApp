@@ -48,9 +48,9 @@ export default function Avatar({ config, accessories = {} }) {
     if (right) group.current.rotation.y -= rotSpeed * delta;
     
     // Camera follow logic
-    // const cameraOffset = new THREE.Vector3(0, 3, 6).applyQuaternion(group.current.quaternion).add(group.current.position);
-    // state.camera.position.lerp(cameraOffset, 0.1);
-    // state.camera.lookAt(group.current.position.x, group.current.position.y + 1, group.current.position.z);
+    const cameraOffset = new THREE.Vector3(0, 3, 6).applyQuaternion(group.current.quaternion).add(group.current.position);
+    state.camera.position.lerp(cameraOffset, 0.1);
+    state.camera.lookAt(group.current.position.x -1, group.current.position.y + 1, group.current.position.z);
   });
 
   return (
