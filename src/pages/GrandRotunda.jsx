@@ -13,7 +13,7 @@ export default function GrandRotunda({ config, enterGenrePortal }) {  if (!confi
   const { scene: horrorDoor } = useGLTF('/models/horror_door2.glb');
   const { scene: scifiDoor } = useGLTF('/models/scifi_door2.glb');
 
-  useFrame((state, delta) => {
+  useFrame((state, delta) =>   {
     if (compassRef.current) compassRef.current.rotation.y += 0.15 * delta;
   });
 
