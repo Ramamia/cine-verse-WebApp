@@ -2,7 +2,9 @@ import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, Float, Html, Sparkles } from '@react-three/drei';
 
-export default function GrandRotunda({ config }) {
+// Add enterGenrePortal here
+export default function GrandRotunda({ config, enterGenrePortal }) {  if (!config) return null; 
+
   const [hoveredGenre, setHoveredGenre] = useState(null);
   const compassRef = useRef();
 
@@ -20,7 +22,7 @@ export default function GrandRotunda({ config }) {
       id: 'romcom', 
       name: 'ROM-COM', 
       desc: 'Love, digital style. Find your cinematic match.', 
-      color: '#ff69b4', 
+      color: 'rgb(160, 31, 117)', 
       model: romcomDoor, 
       pos: [-5, 0, -8],
       scale: 5,
@@ -82,7 +84,7 @@ React.useEffect(() => {
             setHoveredGenre(g);
           }}
           onPointerOut={() => setHoveredGenre(null)}
-          onClick={() => console.log(`Entering ${g.name} Portal...`)}
+onClick={() => enterGenrePortal(g.id)}
         >
           <pointLight 
             position={g.lightPos || [0, 4, 2]} 
@@ -98,13 +100,14 @@ React.useEffect(() => {
           {/* 3. POPUP ANCHORED TO DOOR */}
           {hoveredGenre?.id === g.id && (
             <Html 
-              distanceFactor={10} 
+              distanceFactor={12} 
               /* FIX: [0, height, 0] ensures it is centered horizontally 
                  on the door even as you move the camera. 
               */
               position={g.popupPos || [0, 4, 0]} // Uses the specific X, Y, Z from the array
               center
-              // occlude={[compass]} // Optional: hides popup if behind objects
+              transform
+              sprite={false}
             >
               <div style={{
                 background: 'rgba(0,0,0,0.6)',
@@ -115,9 +118,17 @@ React.useEffect(() => {
                 backdropFilter: 'blur(10px)',
                 boxShadow: `0 0 40px ${g.color}33`,
                 width: '180px',
-                pointerEvents: 'none',
+                pointerEvents: 'auto',
+                cursor: 'pointer',
+                fontFamily: '"Courier New", Courier, monospace',
+                transition: '0.2s ease-in-out',
+                transformStyle: 'preserve-3d',
                 userSelect: 'none'
-              }}>
+              }}
+              onClick={(e) => {
+                  e.stopPropagation(); // Stop click from hitting things behind it
+                  enterGenrePortal(g.id);
+                }}>
                 <h3 style={{ margin: 0, letterSpacing: '5px', fontSize: '1rem' }}>{g.name}</h3>
                 <h4 style={{ margin: '5px 0', fontSize: '0.75rem', opacity: 0.8, fontWeight: 'normal' }}>{g.desc}</h4>
                 <div style={{ height: '1px', background: g.color, margin: '10px 0', opacity: 0.5 }} />
@@ -127,10 +138,6 @@ React.useEffect(() => {
           )}
         </group>
       ))}
-
-      {/* <group position={[0, -1, -1]} rotation={[0, Math.PI, 0]}>
-        <Avatar config={config} />
-      </group> */}
 
       <Sparkles count={200} scale={25} size={1.5} speed={0.6} color="#760707" />
     </group>

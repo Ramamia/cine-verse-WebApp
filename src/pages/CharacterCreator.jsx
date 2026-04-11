@@ -4,12 +4,14 @@ import Avatar from '../components/3d/Avatar';
 
 export default function CharacterCreator({ config }) {
   // Loading models here to pass them as props
+  useGLTF.preload('/models/base_avatar.glb');
+  useGLTF.preload('/models/pink_avatar.glb');
+useGLTF.preload('/models/green_avatar.glb');
   const { scene: cowboy } = useGLTF('/models/cowboy_hat.glb');
-  const { scene: astro } = useGLTF('/models/astro_helmet.glb');
   const { scene: glasses } = useGLTF('/models/cinema_glasses.glb');
   const { scene: hair } = useGLTF('/models/monroe_hair.glb');
 
-  const accessories = { cowboy, astronaut: astro, glasses, hair };
+  const accessories = { cowboy, glasses, hair };
 
   return (
     <group>

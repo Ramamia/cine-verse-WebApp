@@ -6,19 +6,15 @@ import * as THREE from 'three';
 
 export default function Avatar({ config, accessories = {} }) {
   const group = useRef();
-  const { scene, animations } = useGLTF('/models/base_avatar.glb'); 
+// Define path based on config
+  const avatarModel = config?.skin === 'pink' ? '/models/pink_avatar.glb' 
+                    : config?.skin === 'green' ? '/models/green_avatar.glb' 
+                    : '/models/base_avatar.glb';
+
+  // FIX: Pass the dynamic avatarModel variable here
+  const { scene, animations } = useGLTF(avatarModel); 
   const { actions } = useAnimations(animations, group);
   const { forward, backward, left, right } = useKeyboard();
-
-  // Logic to change Skin Color
-  useEffect(() => {
-    if (!config?.skin || !scene) return;
-    scene.traverse((child) => {
-      if (child.isMesh && child.material && child.material.name.toLowerCase().includes("skin")) {
-        child.material.color.set(new THREE.Color(config.skin));
-      }
-    });
-  }, [scene, config?.skin]);
 
   // Animation Controller
   useEffect(() => {
@@ -38,7 +34,6 @@ export default function Avatar({ config, accessories = {} }) {
 
   useFrame((state, delta) => {
     if (!group.current) return;
-    // Standard movement speed
     const speed = 4;
     const rotSpeed = 2.5;
 
@@ -46,22 +41,22 @@ export default function Avatar({ config, accessories = {} }) {
     if (backward) group.current.translateZ(speed * delta);
     if (left) group.current.rotation.y += rotSpeed * delta;
     if (right) group.current.rotation.y -= rotSpeed * delta;
-    
-    // Camera follow logic
-    const cameraOffset = new THREE.Vector3(0, 3, 6).applyQuaternion(group.current.quaternion).add(group.current.position);
+        const cameraOffset = new THREE.Vector3(0, 3, 6).applyQuaternion(group.current.quaternion).add(group.current.position);
     state.camera.position.lerp(cameraOffset, 0.1);
     state.camera.lookAt(group.current.position.x -1, group.current.position.y + 1, group.current.position.z);
   });
 
   return (
-    <primitive ref={group} object={scene} scale={2.5}>
-      {/* ACCESSORY SLOT SYSTEM - Fixed with .clone() */}
-      <group position={[0, 0.65, 0]}>
+    <group name="avatar-isolation-container">
+<primitive 
+      ref={group} 
+      object={scene} 
+      // FIXED SCALE FOR ALL AVATARS
+      scale={2.5} 
+      position={[0, 0, 0]} 
+    >      <group position={[0, 0.65, 0]}>
         {config?.acc === 'cowboy' && accessories.cowboy && (
           <primitive object={accessories.cowboy.clone()} scale={0.15} position={[0, 0.1, 0]} />
-        )}
-        {config?.acc === 'astronaut' && accessories.astronaut && (
-          <primitive object={accessories.astronaut.clone()} scale={0.25} position={[0, 0.05, 0]} />
         )}
         {config?.acc === 'glasses' && accessories.glasses && (
           <primitive object={accessories.glasses.clone()} scale={0.18} position={[0, -0.05, 0.1]} />
@@ -71,5 +66,6 @@ export default function Avatar({ config, accessories = {} }) {
         )}
       </group>
     </primitive>
+    </group>
   );
 }
