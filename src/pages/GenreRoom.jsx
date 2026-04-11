@@ -12,6 +12,7 @@ export default function GenreRoom({ genre, onBack }) {
       {genre === 'scifi' && <SciFiScene />}
     </>
   );
+ 
 }
 
 const genreUI = { position: 'absolute', top: '40px', left: '40px', zIndex: 100 };

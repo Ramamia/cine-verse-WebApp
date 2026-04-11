@@ -7,10 +7,12 @@ import GrandRotunda from './pages/GrandRotunda';
 import AuthModal from './components/ui/AuthModal';
 import Header from './components/ui/Header';
 import CustomizePanel from './components/ui/CustomizePanel.jsx';
+import LoadingScreen from './pages/LoadingScreen';
 
 function App() {
   const [step, setStep] = useState('entrance'); 
   const [isLoading, setIsLoading] = useState(false);
+  const [activeGenre, setActiveGenre] = useState(null);
   const [selectedGenre, setSelectedGenre] = useState('ALL');
   const [config, setConfig] = useState({ 
     acc: null, 
@@ -18,59 +20,42 @@ function App() {
     skin: '#ffdbac' 
   });
 
-  // Dynamic environment settings based on the room
   const roomSettings = {
-    entrance: { 
-      bg: '#160101', 
-      fogNear: 5, 
-      fogFar: 25, 
-      camPos: [2, 7, 13] 
-    },
-    customize: { 
-      bg: '#050000', 
-      fogNear: 2, 
-      fogFar: 15, 
-      camPos: [0, 4, 10] 
-    },
-    hub: { 
-      bg: '#1f1919', 
-      fogNear: 10, 
-      fogFar: 40, 
-      camPos: [0, 5, 12] 
-    },
+    entrance: { bg: '#160101', fogNear: 5, fogFar: 25, camPos: [2, 7, 13] },
+    customize: { bg: '#050000', fogNear: 2, fogFar: 15, camPos: [0, 4, 10] },
+    hub: { bg: '#1f1919', fogNear: 10, fogFar: 40, camPos: [0, 5, 12] },
     genrePage: { bg: '#050000', camPos: [0, 2, 15], fogNear: 5, fogFar: 30 }
   };
 
   const enterGenrePortal = (genreId) => {
-  setIsLoading(true);
-  setActiveGenre(genreId);
-  
-  // You can adjust this time (10000ms = 10 seconds)
-  setTimeout(() => {
-    setIsLoading(false);
-    setStep('genrePage');
-  }, 10000); 
-};
+    setIsLoading(true);
+    setActiveGenre(genreId);
+    setTimeout(() => {
+      setIsLoading(false);
+      setStep('genrePage');
+    }, 10000); 
+  };
 
   const currentSettings = roomSettings[step] || roomSettings.hub;
 
-  const handleSearch = (val) => {
-    console.log("Searching TMDB for:", val);
-  };
+  const handleSearch = (val) => console.log("Searching TMDB for:", val);
 
   const getGenreColor = (genre) => {
-  switch(genre) {
-    case 'ROM-COM': return '#ff69b4';
-    case 'HORROR': return '#433636';
-    case 'SCI-FI': return '#00d4ff';
-    default: return '#760707'; // Cine-Verse Red
-  }
-};
+    switch(genre) {
+      case 'ROM-COM': return '#ff69b4';
+      case 'HORROR': return '#433636';
+      case 'SCI-FI': return '#00d4ff';
+      default: return '#760707';
+    }
+  };
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', background: '#000' }}>
       
-      {/* UI LAYER */}
+      {/* --- UI LAYER (OUTSIDE CANVAS) --- */}
+      
+      {isLoading && <LoadingScreen genre={activeGenre} />}
+
       {step === 'entrance' && (
         <>
           <Header />
@@ -96,121 +81,69 @@ function App() {
           <div style={sidePanelStyle}>
             <h4 style={panelHeader}>CINE-SOCIAL</h4>
             <div style={feedItem}>
-              <div style={userRow}><b>Lara</b> <span style={ratingStyle}>★ 4.5</span></div>
+              <div style={userRow}><b>Lara</b> <span style={ratingStyle}>★ 4</span></div>
               <p style={commentStyle}>"The twist in Scream 6 blew my mind!"</p>
             </div>
             <div style={feedItem}>
-              <div style={userRow}><b>Lilia</b> <span style={ratingStyle}>★ 5.0</span></div>
-              <p style={commentStyle}>"Interstellar is still a masterpiece."</p>
+              <div style={userRow}><b>Fahed</b> <span style={ratingStyle}>★ 2.9</span></div>
+              <p style={commentStyle}>"I can't believe the ending of that movie it sucks"</p>
             </div>
-            <div style={feedItem}>
-              <div style={userRow}><b>Abdelrahman</b> <span style={ratingStyle}>★ 3.0</span></div>
-              <p style={commentStyle}>"Sci-fi lobby is a bit crowded today."</p>
+                        <div style={feedItem}>
+              <div style={userRow}><b>Lilia</b> <span style={ratingStyle}>★ 4.5</span></div>
+              <p style={commentStyle}>"minecraft movie was AMAZINGG"</p>
             </div>
           </div>
 
-{/* COOLER SEARCH BAR WITH INTEGRATED FILTERS */}
-<div style={searchWrapper}>
-      <div style={searchGlassContainer}>
-        <input 
-          type="text" 
-          placeholder={`SEARCHING ${selectedGenre === 'ALL' ? 'CINEMA' : selectedGenre}...`} 
-          style={searchField} 
-          onChange={(e) => handleSearch(e.target.value)}
-        />
-        
-        {/* CLICKABLE FILTER BAR */}
-        <div style={filterBar}>
-          {['ALL', 'ROM-COM', 'HORROR', 'SCI-FI'].map((genre) => (
-            <div 
-              key={genre} 
-              onClick={() => setSelectedGenre(genre)}
-              style={{
-                ...filterTab, 
-                color: selectedGenre === genre ? getGenreColor(genre) : '#555',
-                borderBottom: selectedGenre === genre ? `1px solid ${getGenreColor(genre)}` : '1px solid transparent'
-              }}
-            >
-              {genre}
+          <div style={searchWrapper}>
+            <div style={searchGlassContainer}>
+              <input 
+                type="text" 
+                placeholder={`SEARCHING ${selectedGenre === 'ALL' ? 'CINEMA' : selectedGenre}...`} 
+                style={searchField} 
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+              <div style={filterBar}>
+                {['ALL', 'ROM-COM', 'HORROR', 'SCI-FI'].map((genre) => (
+                  <div key={genre} onClick={() => setSelectedGenre(genre)}
+                    style={{
+                      ...filterTab, 
+                      color: selectedGenre === genre ? getGenreColor(genre) : '#555',
+                      borderBottom: selectedGenre === genre ? `1px solid ${getGenreColor(genre)}` : '1px solid transparent'
+                    }}>
+                    {genre}
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+            <div style={{...searchAccent, background: getGenreColor(selectedGenre), boxShadow: `0 0 15px ${getGenreColor(selectedGenre)}` }} />
+          </div>
+        </>
+      )}
+
+      {step === 'genrePage' && (
+        <div style={genreUI}>
+           <button onClick={() => setStep('hub')} style={backBtn}>← BACK TO ROTUNDA</button>
+           <h1 style={genreTitle}>{activeGenre?.toUpperCase()} VAULT</h1>
         </div>
-      </div>
-      <div style={{...searchAccent, background: getGenreColor(selectedGenre), boxShadow: `0 0 15px ${getGenreColor(selectedGenre)}` }} />
-    </div>
-  </>
-)}      
-      <Canvas 
-        shadows 
-        // Camera position now updates when the step changes
-        camera={{ position: currentSettings.camPos, fov: 50 }}
-      >
+      )}
+
+      {/* --- 3D LAYER --- */}
+
+      <Canvas shadows camera={{ position: currentSettings.camPos, fov: 50 }}>
         <color attach="background" args={[currentSettings.bg]} />
         <fog attach="fog" args={[currentSettings.bg, currentSettings.fogNear, currentSettings.fogFar]} />
 
-{step === 'entrance' && (
-  <OrbitControls 
-    enablePan={false}
-    enableZoom={false}
-    enableRotate={true}
-    
-    // 1. PUSH THE CAMERA TO THE BACK OF THE UNIVERSE
-    // If 80 didn't work, we jump to 150-200
-    minDistance={180} 
-    maxDistance={200} 
-
-    // 2. ADJUST THE TARGET
-    // Setting Z to 0 and Y higher to frame the booth from far away
-    target={[-2, 10, 5]}
-
-    // 3. KEEP ROTATION TIGHT
-    minAzimuthAngle={-Math.PI / 16} 
-    maxAzimuthAngle={Math.PI / 16} 
-    minPolarAngle={Math.PI / 2.5} 
-    maxPolarAngle={Math.PI / 2.1} 
-  />
-)}
-
-
-        {/* OrbitControls enabled only in the hub for free movement */}
-{step === 'hub' && (
-  
-  <OrbitControls 
-    enablePan={false} 
-    // Limits looking up and down significantly
-    maxPolarAngle={Math.PI / 2.2} 
-    minPolarAngle={Math.PI / 2.5}
-    minDistance={10} 
-    maxDistance={16} 
-    target={[3.5, 4, 2]}
-    enableRotate={true}
-    // Limits rotation to a very small left/right nudge
-    minAzimuthAngle={-Math.PI / 12} 
-    maxAzimuthAngle={Math.PI / 12}
-  />
-)}
-
-
+        {step === 'entrance' && <OrbitControls enablePan={false} enableZoom={false} enableRotate={true} minDistance={180} maxDistance={200} target={[-2, 10, 5]} minAzimuthAngle={-Math.PI / 16} maxAzimuthAngle={Math.PI / 16} minPolarAngle={Math.PI / 2.5} maxPolarAngle={Math.PI / 2.1} />}
+        {step === 'hub' && <OrbitControls enablePan={false} maxPolarAngle={Math.PI / 2.2} minPolarAngle={Math.PI / 2.5} minDistance={10} maxDistance={16} target={[3.5, 4, 2]} enableRotate={true} minAzimuthAngle={-Math.PI / 12} maxAzimuthAngle={Math.PI / 12} />}
 
         <Suspense fallback={null}>
-
           <ambientLight intensity={0.4} />
-          
-          {/* Main lighting adjusts slightly for the Hub */}
           <spotLight position={[0, 10, 0]} intensity={step === 'hub' ? 30 : 20} angle={0.5} penumbra={1} castShadow />
 
-{/* 1. Only show Entrance in the beginning */}
-{step === 'entrance' && <Entrance />}
+          {step === 'entrance' && <Entrance />}
+          {step === 'customize' && <CharacterCreator config={config} />}
+          {step === 'hub' && <GrandRotunda config={config} enterGenrePortal={enterGenrePortal} />}
 
-{/* 2. Only show Character Creator during customization */}
-{step === 'customize' && <CharacterCreator config={config} />}
-
-{/* 3. STRICT CHECK: Only show Hub when actually in the Hub */}
-{step === 'hub' && <GrandRotunda 
-    config={config} 
-    enterGenrePortal={enterGenrePortal} // PASS THE PROP
-  />}
-          {/* Floor remains consistent but changes color with environment */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
             <planeGeometry args={[100, 100]} />
             <MeshReflectorMaterial
@@ -224,14 +157,6 @@ function App() {
             />
           </mesh>
           <Environment preset="night" />
-          {isLoading && <LoadingScreen genre={activeGenre} />}
-  
-  {step === 'genrePage' && (
-    <GenreRoom 
-      genre={activeGenre} 
-      onBack={() => setStep('hub')} 
-    />
-  )}
         </Suspense>
       </Canvas>
       <Loader />
@@ -246,14 +171,14 @@ const searchWrapper = {
 
 const searchGlassContainer = {
   width: '100%', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(20px)', 
-  border: '1px solid rgba(255, 255, 255, 0.05)', padding: '10px', borderRadius: '4px',
+  border:  '1px solid rgba(255, 255, 255, 0.05)', padding: '10px', borderRadius: '4px',
   boxShadow: '0 10px 40px rgba(0,0,0,0.8)'
 };
 
 const filterBar = { 
   display: 'flex', justifyContent: 'center', gap: '25px', marginTop: '5px', 
-  padding: '10px 0', borderTop: '1px solid rgba(255,255,255,0.05)' 
-};
+  padding:'10px 0', borderTop: '1px solid rgba(255,255,255,0.05)' 
+  };
 
 const filterTab = {
   fontSize: '0.65rem', letterSpacing: '2px', cursor: 'pointer', transition: '0.3s all ease',
@@ -281,5 +206,9 @@ const titleStyle = { color: '#fff', fontSize: '2rem', letterSpacing: '10px', fon
 const subtitleStyle = { color: '#888', letterSpacing: '3px', fontSize: '0.8rem', marginTop: '10px', textTransform: 'uppercase', fontWeight: 'bold' };
 const hubOverlay = { position: 'absolute', top: '10%', width: '100%', textAlign: 'center', zIndex: 10, pointerEvents: 'none' };
 const hubTitle = { color: '#fff', fontSize: '1.5rem', letterSpacing: '15px', fontWeight: 'bold' };
+
+const genreUI = { position: 'absolute', top: '40px', left: '40px', zIndex: 1000 };
+const backBtn = { background: 'rgba(0,0,0,0.5)', border: '1px solid #760707', color: '#fff', padding: '12px 24px', cursor: 'pointer', letterSpacing: '2px', backdropFilter: 'blur(10px)' };
+const genreTitle = { color: '#fff', letterSpacing: '10px', marginTop: '20px', fontSize: '1.5rem' };
 
 export default App;
