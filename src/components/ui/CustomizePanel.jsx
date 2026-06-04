@@ -6,6 +6,7 @@ import {
   equipBtn, customizeActionBtn,
 } from '../../styles/componentStyles';
 import { colors } from '../../styles/theme';
+import NicknameInput from './NicknameInput';
 
 const TABS = ['COLOR', 'ACCESSORIES', 'HAIR'];
 
@@ -23,7 +24,7 @@ const CATALOG = {
   ],
 };
 
-const CustomizePanel = ({ config, setConfig, onFinish }) => {
+const CustomizePanel = ({ config, setConfig, user, setUser, onFinish }) => {
   const [activeTab,    setActiveTab]    = useState('COLOR');
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -59,6 +60,14 @@ const CustomizePanel = ({ config, setConfig, onFinish }) => {
     (activeTab === 'HAIR'        && config?.hair === item.id) ||
     (activeTab === 'COLOR'       && config?.skin === item.id);
 
+  const handleConfirm = () => {
+    if (!user || !user.nickname || !user.nickname.trim()) {
+      alert('Please choose a nickname before confirming your identity.');
+      return;
+    }
+    onFinish();
+  };
+
   return (
     <motion.div initial={{ x: 100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} style={panelStyle}>
 
@@ -82,7 +91,7 @@ const CustomizePanel = ({ config, setConfig, onFinish }) => {
                 opacity:      isDisabled ? 0.4 : 1,
               }}
             >
-              {tab} {isDisabled && '🔒'}
+              {tab} {isDisabled && ' (LOCKED)'}
             </div>
           );
         })}
@@ -106,7 +115,7 @@ const CustomizePanel = ({ config, setConfig, onFinish }) => {
             fontWeight: 'bold',
             fontFamily: 'monospace'
           }}>
-            ⚠️ CHOOSE A SKIN COLOR FIRST TO UNLOCK ACCESSORIES
+            ATTENTION: CHOOSE A SKIN COLOR FIRST TO UNLOCK ACCESSORIES
           </div>
         )}
 
@@ -184,7 +193,13 @@ const CustomizePanel = ({ config, setConfig, onFinish }) => {
         )}
       </AnimatePresence>
 
-      <button onClick={onFinish} style={customizeActionBtn}>CONFIRM IDENTITY</button>
+      {/* Nickname input */}
+      <NicknameInput 
+        nickname={user?.nickname || ''} 
+        setNickname={(name) => setUser(prev => ({ ...prev, nickname: name }))} 
+      />
+
+      <button onClick={handleConfirm} style={customizeActionBtn}>CONFIRM IDENTITY</button>
     </motion.div>
   );
 };

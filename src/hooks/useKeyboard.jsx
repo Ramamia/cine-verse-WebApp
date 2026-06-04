@@ -7,6 +7,9 @@ export const useKeyboard = () => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
       const key = e.key.toLowerCase();
       if (key === 'arrowup'    || key === 'w') setActions((a) => ({ ...a, forward:  true }));
       if (key === 'arrowdown'  || key === 's') setActions((a) => ({ ...a, backward: true }));
@@ -15,6 +18,9 @@ export const useKeyboard = () => {
     };
 
     const handleKeyUp = (e) => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
       const key = e.key.toLowerCase();
       if (key === 'arrowup'    || key === 'w') setActions((a) => ({ ...a, forward:  false }));
       if (key === 'arrowdown'  || key === 's') setActions((a) => ({ ...a, backward: false }));

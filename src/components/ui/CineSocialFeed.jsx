@@ -9,18 +9,41 @@ const FEED_ITEMS = [
   { user: 'Lilia', rating: '★ 4.5', comment: '"minecraft movie was AMAZINGG"' },
 ];
 
-const CineSocialFeed = () => (
+const CineSocialFeed = ({ feedItems = FEED_ITEMS, following = [], onToggleFollow }) => (
   <div style={sidePanelStyle}>
     <h4 style={panelHeader}>CINE-SOCIAL</h4>
-    {FEED_ITEMS.map(({ user, rating, comment }) => (
-      <div key={user} style={feedItem}>
-        <div style={userRow}>
-          <b>{user}</b>
-          <span style={ratingStyle}>{rating}</span>
+    {feedItems.map(({ user, rating, comment }) => {
+      const isFollowing = following.includes(user);
+      return (
+        <div key={user} style={feedItem}>
+          <div style={userRow}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <b>{user}</b>
+              <button
+                onClick={() => onToggleFollow && onToggleFollow(user)}
+                style={{
+                  background: isFollowing ? 'rgba(255, 255, 255, 0.1)' : 'rgba(203, 24, 108, 0.15)',
+                  border: isFollowing ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(203, 24, 108, 0.5)',
+                  borderRadius: '3px',
+                  color: isFollowing ? '#aaa' : '#cb186c',
+                  fontSize: '0.6rem',
+                  padding: '2px 6px',
+                  cursor: 'pointer',
+                  fontFamily: 'monospace',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {isFollowing ? 'FOLLOWING' : 'FOLLOW'}
+              </button>
+            </div>
+            <span style={ratingStyle}>{rating}</span>
+          </div>
+          <p style={commentStyle}>{comment}</p>
         </div>
-        <p style={commentStyle}>{comment}</p>
-      </div>
-    ))}
+      );
+    })}
   </div>
 );
 

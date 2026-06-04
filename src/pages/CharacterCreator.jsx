@@ -41,7 +41,7 @@ export default function CharacterCreator({ config }) {
 
       {/* Avatar positioned in the scene */}
       <group position={[-0.3, 2.67, 5.6]} rotation={[-0.1, 0.3, -0.1]}>
-        <Avatar config={config} accessories={accessories} />
+        <Avatar config={config} accessories={accessories} isPreview={true} />
       </group>
     </group>
   );

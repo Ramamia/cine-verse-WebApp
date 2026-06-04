@@ -6,30 +6,30 @@ import { useKeyboard } from '../../hooks/useKeyboard';
 
 // Expose model offsets here so they can be easily customized by the user.
 // You can adjust position [x, y, z], scale, and rotation [x, y, z] (in radians) for each model.
-const MODEL_OFFSETS = {
+export const MODEL_OFFSETS = {
   '/models/base_avatar.glb': {
-    position: [0, 0, 0],
+    position: [-0.2, 1.5, 8.3],
     scale: 2.5,
     rotation: [0, 0, 0]
   },
   '/models/pink.glb': {
-    position: [0, 0, 0],
+    position: [-7.28, 0.4, -4.9],
     scale: 2.5,
     rotation: [0, 0, 0]
   },
   '/models/green.glb': {
-    position: [0, 0, 0],
+    position: [-7.28, 0.4, -4.9],
     scale: 2.5,
     rotation: [0, 0, 0]
   },
   '/models/cowboy pink.glb': {
-    position: [-1.47, 0, -1.77],
-    scale: 0.125,
+    position:[-6.54, 0.32, -0.5],
+    scale: 0.5,
     rotation: [0, 0, 0]
   },
   '/models/cowboy green.glb': {
-    position: [-0.53, 0.07, -1.74],
-    scale: 0.125,
+    position: [-2.78, 0.62, -0.38],
+    scale: 0.5,
     rotation: [0, 0, 0]
   },
   '/models/glasses pink.glb': {
@@ -54,7 +54,8 @@ const MODEL_OFFSETS = {
   }
 };
 
-export default function Avatar({ config, accessories = {} }) {
+
+export default function Avatar({ config, accessories = {}, isPreview = false, isProfile = false }) {
   const group = useRef();
 
   // 1. Resolve the correct model path based on selected skin color and accessories,
@@ -65,28 +66,20 @@ export default function Avatar({ config, accessories = {} }) {
   if (config?.skin === 'pink') {
     if (config.acc === 'cowboy') {
       modelPath = '/models/cowboy pink.glb';
-    } else if (config.acc === 'glasses') {
-      modelPath = '/models/glasses pink.glb';
-      renderAccessoryManually = true; // glasses pink.glb lacks glasses mesh
-    } else if (config.hair === 'marilyn') {
-      modelPath = '/models/monroe hair pink.glb';
-      renderAccessoryManually = true; // monroe hair pink.glb lacks hair mesh
     } else {
       modelPath = '/models/pink.glb';
+      if (config.acc === 'glasses' || config.hair === 'marilyn') {
+        renderAccessoryManually = true;
+      }
     }
   } else if (config?.skin === 'green') {
     if (config.acc === 'cowboy') {
       modelPath = '/models/cowboy green.glb';
-    } else if (config.acc === 'glasses') {
-      // 'glasses green.glb' in the workspace is empty (852 bytes, no meshes).
-      // We fall back to the base green avatar and render the glasses manually on top.
-      modelPath = '/models/green.glb';
-      renderAccessoryManually = true;
-    } else if (config.hair === 'marilyn') {
-      modelPath = '/models/monroe hair green.glb';
-      renderAccessoryManually = true; // monroe hair green.glb lacks hair mesh
     } else {
       modelPath = '/models/green.glb';
+      if (config.acc === 'glasses' || config.hair === 'marilyn') {
+        renderAccessoryManually = true;
+      }
     }
   }
 
@@ -110,10 +103,49 @@ export default function Avatar({ config, accessories = {} }) {
 
   useEffect(() => {
     if (!scene) return;
+
+    // Check if a root 'base_avatar' node exists in the scene hierarchy.
+    let baseAvatarNodeExists = false;
+    scene.traverse((n) => {
+      if (n.name === 'base_avatar') baseAvatarNodeExists = true;
+    });
+
     scene.traverse((child) => {
-      if (child.isMesh && child.name.includes('pCube35_lambert1')) {
-        child.material = child.material.clone();
-        child.material.color.set(new THREE.Color(targetColor));
+      // If a 'base_avatar' node is present in the file, filter out duplicate mesh elements
+      // that are not parented under it.
+      let isFromMainAvatar = true;
+      if (baseAvatarNodeExists) {
+        let curr = child;
+        let found = false;
+        while (curr) {
+          if (curr.name === 'base_avatar') {
+            found = true;
+            break;
+          }
+          curr = curr.parent;
+        }
+        isFromMainAvatar = found;
+      }
+
+      if (child.isMesh) {
+        if (!isFromMainAvatar) {
+          child.visible = false;
+          return;
+        }
+
+        if (child.name.includes('pCube35_lambert1')) {
+          child.material = child.material.clone();
+          child.material.color.set(new THREE.Color(targetColor));
+        }
+
+        const isBody = child.name.includes('pCube35_lambert1');
+        const isCowboyHat = child.name.includes('Hat4_pasted__M_Hat') || child.name.includes('pCube32') || child.name.includes('pCube33') || child.name.includes('pCube34');
+        const isGlasses = child.name.toLowerCase().includes('glass') || child.name.toLowerCase().includes('cinema');
+        const isHair = child.name.toLowerCase().includes('hair') || child.name.toLowerCase().includes('monroe') || child.name.toLowerCase().includes('marilyn');
+        
+        if (!isBody && !isCowboyHat && !isGlasses && !isHair) {
+          child.visible = false;
+        }
       }
     });
   }, [scene, targetColor]);
@@ -136,6 +168,7 @@ export default function Avatar({ config, accessories = {} }) {
 
   // Movement & camera follow
   useFrame((state, delta) => {
+    if (isPreview) return;
     if (!group.current) return;
     const speed    = 4;
     const rotSpeed = 2.5;

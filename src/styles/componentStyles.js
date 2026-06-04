@@ -48,12 +48,12 @@ export const taglineStyle = {
 
 // ─── CustomizePanel ───────────────────────────────────────────────────────────
 export const panelStyle = {
-  position: 'absolute', right: '50px', top: '15%', transform: 'translateY(-50%)',
+  position: 'absolute', right: '50px', top: '10%', transform: 'translateY(-50%)',
   width: '340px', background: 'rgba(10, 0, 0, 0.6)', backdropFilter: 'blur(15px)',
-  padding: '40px', borderRadius: '5px', border: '1px solid rgba(81, 7, 7, 0.7)',
+  padding: '30px', borderRadius: '5px', border: '1px solid rgba(81, 7, 7, 0.7)',
   zIndex: 100, boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
 };
-export const tabContainer  = { display: 'flex', justifyContent: 'space-between', marginBottom: '25px' };
+export const tabContainer  = { display: 'flex', justifyContent: 'space-between', marginBottom: '20px' };
 export const tabBtn        = { cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '2px', transition: '0.3s', paddingBottom: '10px', flex: 1, textAlign: 'center' };
 export const contentBody   = { minHeight: '220px' };
 export const label         = { color: '#888', fontSize: '0.7rem', letterSpacing: '2px', marginBottom: '20px' };
@@ -62,4 +62,4 @@ export const optionBox     = { aspectRatio: '1/1', background: 'rgba(255,255,255
 export const boxInner      = { width: '100%', height: '100%' };
 export const videoStyle    = { width: '100%', height: '100%', objectFit: 'cover' };
 export const equipBtn      = { width: '100%', padding: '12px', color: '#fff', marginTop: '20px', cursor: 'pointer', fontWeight: 'bold', letterSpacing: '2px', fontSize: '0.7rem' };
-export const customizeActionBtn = { width: '100%', padding: '15px', background: '#760707', color: '#fff', border: 'none', marginTop: '40px', cursor: 'pointer', fontWeight: 'bold', letterSpacing: '2px' };
+export const customizeActionBtn = { width: '100%', padding: '15px', background: '#760707', color: '#fff', border: 'none', marginTop: '20px', cursor: 'pointer', fontWeight: 'bold', letterSpacing: '2px' };

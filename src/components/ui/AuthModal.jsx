@@ -9,6 +9,21 @@ const THEME_RED = '#760707';
 
 const AuthModal = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = () => {
+    if (!email || !password) {
+      alert('Please fill in all credentials.');
+      return;
+    }
+    // Simple email validation regex
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+    onLogin({ email, password, isLogin });
+  };
 
   return (
     <div style={authOverlay}>
@@ -48,12 +63,26 @@ const AuthModal = ({ onLogin }) => {
 
         {/* Fields */}
         <div style={{ width: '100%' }}>
-          <input type="text"     placeholder="USERNAME" style={authInput} />
-          <input type="password" placeholder="PASSWORD" style={authInput} />
+          <input
+            type="email"
+            placeholder="EMAIL ADDRESS"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={authInput}
+            required
+          />
+          <input
+            type="password"
+            placeholder="PASSWORD"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={authInput}
+            required
+          />
         </div>
 
         {/* CTA */}
-        <button onClick={onLogin} style={{ ...authActionBtn, backgroundColor: THEME_RED }}>
+        <button onClick={handleSubmit} style={{ ...authActionBtn, backgroundColor: THEME_RED }}>
           {isLogin ? 'RESUME EXPERIENCE' : 'TAKE YOUR SEAT'}
         </button>
       </motion.div>
