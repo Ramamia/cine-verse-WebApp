@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
 import { useKeyboard } from '../../hooks/useKeyboard';
+import { clone } from 'three/examples/jsm/utils/SkeletonUtils';
+
 
 // Expose model offsets here so they can be easily customized by the user.
 // You can adjust position [x, y, z], scale, and rotation [x, y, z] (in radians) for each model.
@@ -55,37 +57,47 @@ export const MODEL_OFFSETS = {
 };
 
 
-export default function Avatar({ config, accessories = {}, isPreview = false, isProfile = false }) {
-  const group = useRef();
-
-  // 1. Resolve the correct model path based on selected skin color and accessories,
-  // and check if accessories need to be rendered manually (since some models do not contain geometry).
+export function getModelPath(config) {
   let modelPath = '/models/base_avatar.glb';
-  let renderAccessoryManually = false;
-
   if (config?.skin === 'pink') {
     if (config.acc === 'cowboy') {
       modelPath = '/models/cowboy pink.glb';
+    } else if (config.acc === 'glasses') {
+      modelPath = '/models/glasses pink.glb';
+    } else if (config.hair === 'marilyn') {
+      modelPath = '/models/monroe hair pink.glb';
     } else {
       modelPath = '/models/pink.glb';
-      if (config.acc === 'glasses' || config.hair === 'marilyn') {
-        renderAccessoryManually = true;
-      }
     }
   } else if (config?.skin === 'green') {
     if (config.acc === 'cowboy') {
       modelPath = '/models/cowboy green.glb';
+    } else if (config.acc === 'glasses') {
+      modelPath = '/models/glasses green.glb';
+    } else if (config.hair === 'marilyn') {
+      modelPath = '/models/monroe hair green.glb';
     } else {
       modelPath = '/models/green.glb';
-      if (config.acc === 'glasses' || config.hair === 'marilyn') {
-        renderAccessoryManually = true;
-      }
     }
   }
+  return modelPath;
+}
+
+export default function Avatar({ config, accessories = {}, isPreview = false, isProfile = false }) {
+  const group = useRef();
+
+  // 1. Resolve the correct model path based on selected skin color and accessories.
+  const modelPath = getModelPath(config);
 
   // 2. Load the base avatar (for skeletal animations and reference sizing) and the selected model.
   const baseAvatar = useGLTF('/models/base_avatar.glb');
   const { scene, animations: modelAnimations } = useGLTF(modelPath);
+
+  // Clone the scene to isolate instances (stretching/positioning in Profile vs customization)
+  const clonedScene = React.useMemo(() => {
+    if (!scene) return null;
+    return clone(scene);
+  }, [scene]);
 
   // Use the animations from base_avatar if the loaded model has no embedded clips.
   const animations = modelAnimations.length > 0 ? modelAnimations : baseAvatar.animations;
@@ -93,7 +105,6 @@ export default function Avatar({ config, accessories = {}, isPreview = false, is
   const { forward, backward, left, right } = useKeyboard();
 
   // 3. Dynamically set the skin color of the body mesh to match the user config color.
-  // This overrides the green skin baked into the accessory GLB files when pink is chosen.
   const skinColorMap = {
     pink: '#cb186c',
     green: '#06973d',
@@ -102,15 +113,15 @@ export default function Avatar({ config, accessories = {}, isPreview = false, is
   const targetColor = skinColorMap[config?.skin] ?? '#ffdbac';
 
   useEffect(() => {
-    if (!scene) return;
+    if (!clonedScene) return;
 
     // Check if a root 'base_avatar' node exists in the scene hierarchy.
     let baseAvatarNodeExists = false;
-    scene.traverse((n) => {
+    clonedScene.traverse((n) => {
       if (n.name === 'base_avatar') baseAvatarNodeExists = true;
     });
 
-    scene.traverse((child) => {
+    clonedScene.traverse((child) => {
       // If a 'base_avatar' node is present in the file, filter out duplicate mesh elements
       // that are not parented under it.
       let isFromMainAvatar = true;
@@ -142,13 +153,21 @@ export default function Avatar({ config, accessories = {}, isPreview = false, is
         const isCowboyHat = child.name.includes('Hat4_pasted__M_Hat') || child.name.includes('pCube32') || child.name.includes('pCube33') || child.name.includes('pCube34');
         const isGlasses = child.name.toLowerCase().includes('glass') || child.name.toLowerCase().includes('cinema');
         const isHair = child.name.toLowerCase().includes('hair') || child.name.toLowerCase().includes('monroe') || child.name.toLowerCase().includes('marilyn');
-        
-        if (!isBody && !isCowboyHat && !isGlasses && !isHair) {
+
+        if (isBody) {
+          child.visible = true;
+        } else if (isCowboyHat) {
+          child.visible = (config?.acc === 'cowboy');
+        } else if (isGlasses) {
+          child.visible = (config?.acc === 'glasses');
+        } else if (isHair) {
+          child.visible = (config?.hair === 'marilyn');
+        } else {
           child.visible = false;
         }
       }
     });
-  }, [scene, targetColor]);
+  }, [clonedScene, targetColor, config]);
 
   // Swap between idle and walk animations
   useEffect(() => {
@@ -205,22 +224,11 @@ export default function Avatar({ config, accessories = {}, isPreview = false, is
       */}
       <primitive
         key={modelPath}
-        object={scene}
+        object={clonedScene}
         scale={offsets.scale}
         position={offsets.position}
         rotation={offsets.rotation}
-      >
-        {renderAccessoryManually && (
-          <group position={[0, 0.65, 0]}>
-            {config?.acc === 'glasses' && accessories.glasses && (
-              <primitive object={accessories.glasses.clone()} scale={0.18} position={[0, -0.05, 0.1]} />
-            )}
-            {config?.hair === 'marilyn' && accessories.hair && (
-              <primitive object={accessories.hair.clone()} scale={0.2} position={[0, 0, 0]} />
-            )}
-          </group>
-        )}
-      </primitive>
+      />
     </group>
   );
 }

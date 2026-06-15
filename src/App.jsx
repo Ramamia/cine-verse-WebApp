@@ -1,11 +1,13 @@
-  import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Canvas, useFrame} from '@react-three/fiber';
 import { Loader, MeshReflectorMaterial, Environment, OrbitControls } from '@react-three/drei';
 
 // Pages (full-screen scenes)
 import Entrance        from './pages/Entrance';
-import CharacterCreator from './pages/CharacterCreator';
 import GrandRotunda    from './pages/GrandRotunda';
+import CharacterCreator from './pages/CharacterCreator';
+import HorrorRoom      from './pages/HorrorRoom';
+import RomComRoom      from './pages/RomComRoom';
 import LoadingScreen   from './pages/LoadingScreen';
 
 // UI components
@@ -15,7 +17,6 @@ import CustomizePanel  from './components/ui/CustomizePanel';
 import SearchBar       from './components/ui/SearchBar';
 import CineSocialFeed  from './components/ui/CineSocialFeed';
 import ProfilePopup    from './components/ui/ProfilePopup';
-import HorrorRoom       from './pages/HorrorRoom';
 import MovieDetailPopup from './components/ui/MovieDetailPopup';
 
 // Styles
@@ -86,7 +87,9 @@ function App() {
 
   const handleSearch = (val) => console.log('Searching TMDB for:', val);
 
-  const currentSettings = roomSettings[step] ?? roomSettings.hub;
+  const currentSettings = step === 'genrePage' 
+    ? (activeGenre === 'romcom' ? roomSettings.romcomPage : roomSettings.genrePage)
+    : (roomSettings[step] ?? roomSettings.hub);
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', background: '#000' }}>
@@ -282,6 +285,9 @@ function App() {
           {step === 'genrePage' && activeGenre === 'horror' && (
             <HorrorRoom onSelectMovie={setSelectedMovie} />
           )}
+          {step === 'genrePage' && activeGenre === 'romcom' && (
+            <RomComRoom onSelectMovie={setSelectedMovie} />
+          )}
 
           {/* Reflective floor */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
@@ -325,6 +331,7 @@ function App() {
             setFeedItems(prev => [newReview, ...prev]);
           }}
           followedFriends={user.following}
+          genre={activeGenre}
         />
       )}
 

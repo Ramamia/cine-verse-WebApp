@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useTexture, Html, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
@@ -163,15 +163,37 @@ function MoviePosterMesh({ movie, texture, index, onSelect }) {
   // Staggered light color (amber vs dark red) to give a cinematic horror atmosphere
   const lightColor = index % 2 === 0 ? '#760707' : '#a55d0f';
 
+  const lightRef = React.useRef();
+  useFrame((state) => {
+    if (lightRef.current) {
+      // Scary flickering light above the poster
+      const baseIntensity = hovered ? 28 : 18;
+      const flicker = Math.sin(state.clock.getElapsedTime() * 12 + index) * 3;
+      // Occasional random blackout flicker
+      const glitch = Math.random() > 0.97 ? -12 : 0;
+      lightRef.current.intensity = Math.max(0, baseIntensity + flicker + glitch);
+    }
+  });
+
   return (
     <group position={[posX, posY, movie.z]}>
-      {/* Light Source directly above the poster */}
+      {/* Colored flickering light (red/amber atmosphere) */}
       <pointLight 
+        ref={lightRef}
         position={[isLeft ? 0.8 : -0.8, 1.4, 0]} 
         intensity={18} 
         distance={6} 
         color={lightColor}
         decay={1.8}
+      />
+
+      {/* Soft white fill light to illuminate the poster clearly */}
+      <pointLight 
+        position={[isLeft ? 0.3 : -0.3, 1.8, 0]} 
+        intensity={5} 
+        distance={5} 
+        color="#ffffff"
+        decay={2.5}
       />
 
       {/* Interactive Frame Box */}
@@ -231,6 +253,7 @@ function MoviePosterMesh({ movie, texture, index, onSelect }) {
 export default function HorrorRoom({ onSelectMovie }) {
   const { camera } = useThree();
   const { forward, backward } = useKeyboard();
+  const [showEndSign, setShowEndSign] = useState(false);
 
   // Load all textures in parallel
   const textures = useTexture(MOVIES.map(m => m.poster));
@@ -242,13 +265,16 @@ export default function HorrorRoom({ onSelectMovie }) {
     if (forward)  camera.position.z -= speed * delta;
     if (backward) camera.position.z += speed * delta;
 
-    // Clamp boundary so user stays inside the dark hallway
-    camera.position.z = Math.max(-32, Math.min(17, camera.position.z));
+    // Clamp boundary — stop user well before the end wall
+    camera.position.z = Math.max(-24, Math.min(12.5, camera.position.z));
     camera.position.x = 0; // Lock to the middle of the hallway width
     camera.position.y = 2; // Lock eye level height
 
     // Keep camera target facing straight forward down the hallway (Z negative direction)
     camera.lookAt(0, 2, camera.position.z - 10);
+
+    // Only show THE END sign when close enough to read it
+    setShowEndSign(camera.position.z < -20);
   });
 
   return (
@@ -257,7 +283,7 @@ export default function HorrorRoom({ onSelectMovie }) {
       <ambientLight intensity={0.03} />
 
       {/* Ceiling spot fill lights to paint a dim red glow along the middle corridor */}
-      {[-25, -15, -5, 5, 15].map((zVal) => (
+      {[-25, -15, -5, 5, 12.5].map((zVal) => (
         <pointLight
           key={zVal}
           position={[0, 4.4, zVal]}
@@ -269,39 +295,68 @@ export default function HorrorRoom({ onSelectMovie }) {
       ))}
 
       {/* Hallway Ceiling Mesh */}
-      <mesh position={[0, 4.5, -7.5]}>
-        <planeGeometry args={[10, 50]} />
-        <meshStandardMaterial color="#0c0a0a" roughness={1} side={THREE.DoubleSide} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 4.5, -8.75]}>
+        <planeGeometry args={[10, 43.5]} />
+        <meshStandardMaterial color="#150808" roughness={1} side={THREE.DoubleSide} />
       </mesh>
 
       {/* Hallway Floor Mesh */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.95, -7.5]}>
-        <planeGeometry args={[10, 50]} />
-        <meshStandardMaterial color="#070606" roughness={1.0} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.95, -8.75]}>
+        <planeGeometry args={[10, 43.5]} />
+        <meshStandardMaterial color="#120808" roughness={1.0} />
       </mesh>
 
       {/* Left Wall Mesh */}
-      <mesh position={[-5, 1.8, -7.5]} rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[50, 6]} />
-        <meshStandardMaterial color="#0a0808" roughness={0.9} />
+      <mesh position={[-5, 1.8, -8.75]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[43.5, 6]} />
+        <meshStandardMaterial color="#1a0a0a" roughness={0.9} />
       </mesh>
 
       {/* Right Wall Mesh */}
-      <mesh position={[5, 1.8, -7.5]} rotation={[0, -Math.PI / 2, 0]}>
-        <planeGeometry args={[50, 6]} />
-        <meshStandardMaterial color="#0a0808" roughness={0.9} />
+      <mesh position={[5, 1.8, -8.75]} rotation={[0, -Math.PI / 2, 0]}>
+        <planeGeometry args={[43.5, 6]} />
+        <meshStandardMaterial color="#1a0a0a" roughness={0.9} />
       </mesh>
 
       {/* End Wall Mesh (Dark end of the corridor) */}
-      <mesh position={[0, 1.8, -32.5]} rotation={[0, 0, 0]}>
+      <mesh position={[0, 1.8, -30.5]} rotation={[0, 0, 0]}>
         <planeGeometry args={[10, 6]} />
-        <meshStandardMaterial color="#050404" roughness={1.0} />
+        <meshStandardMaterial color="#1a0a0a" roughness={1.0} />
       </mesh>
 
+      {/* Scary End Sign — only visible when very close */}
+      {showEndSign && (
+        <Html position={[0, 2.0, -30.4]} center transform zIndexRange={[0, 0]}>
+          <div style={{
+            textAlign: 'center',
+            color: '#ff1a1a',
+            fontFamily: '"Creepster", "Courier New", Courier, monospace',
+            textShadow: '0 0 10px #760707, 0 0 20px #ff0000',
+            userSelect: 'none',
+            pointerEvents: 'none',
+          }}>
+            <h1 style={{ fontSize: '32px', margin: '0 0 10px 0', letterSpacing: '8px', fontWeight: 'bold' }}>THE END</h1>
+            <p style={{
+              fontSize: '11px',
+              color: '#888',
+              fontFamily: 'monospace',
+              letterSpacing: '2px',
+              margin: 0,
+              fontStyle: 'italic',
+              maxWidth: '300px',
+              textTransform: 'uppercase',
+              lineHeight: '1.4'
+            }}>
+              That's all for the horror movies... for now...
+            </p>
+          </div>
+        </Html>
+      )}
+
       {/* Back Entrance Wall Mesh */}
-      <mesh position={[0, 1.8, 17.5]} rotation={[0, Math.PI, 0]}>
+      <mesh position={[0, 1.8, 13.0]} rotation={[0, Math.PI, 0]}>
         <planeGeometry args={[10, 6]} />
-        <meshStandardMaterial color="#080707" roughness={1.0} />
+        <meshStandardMaterial color="#1a0a0a" roughness={1.0} />
       </mesh>
 
       {/* Renders the 12 Movie Poster meshes along the walls */}

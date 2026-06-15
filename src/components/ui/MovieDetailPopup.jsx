@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
-export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddReview, followedFriends = [] }) {
+export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddReview, followedFriends = [], genre = 'horror' }) {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [selectedFriend, setSelectedFriend] = useState('');
@@ -64,6 +64,18 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
     alert('Your review has been successfully posted to Cine-Social!');
     setComment('');
   };
+  // ── Theme Colors based on genre ──
+  const isRomcom = genre === 'romcom';
+  const themeAccent = isRomcom ? '#ff69b4' : '#760707';
+  const themeAccentLight = isRomcom ? '#ffb6d9' : '#ff4b4b';
+  const themeAccentRgba = isRomcom ? 'rgba(255, 105, 180, 0.5)' : 'rgba(118, 7, 7, 0.5)';
+  const themeAccentRgbaLight = isRomcom ? 'rgba(255, 105, 180, 0.15)' : 'rgba(118, 7, 7, 0.15)';
+  const themeAccentRgbaDivider = isRomcom ? 'rgba(255, 105, 180, 0.2)' : 'rgba(118, 7, 7, 0.2)';
+  const themeShadow = isRomcom ? 'rgba(255, 105, 180, 0.3)' : 'rgba(118, 7, 7, 0.3)';
+  const themeCardBg = isRomcom ? 'rgba(30, 15, 25, 0.95)' : 'rgba(12, 10, 10, 0.95)';
+  const themePosterBg = isRomcom ? '#1a0a14' : '#000';
+  const badgeLabel = isRomcom ? 'ROMCOM LOUNGE' : 'HORROR VAULT';
+  const themeInputBorder = isRomcom ? 'rgba(255, 105, 180, 0.4)' : 'rgba(118, 7, 7, 0.4)';
 
   return (
     <div style={overlayStyle}>
@@ -72,7 +84,12 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-        style={popupCardStyle}
+        style={{
+          ...popupCardStyle,
+          background: themeCardBg,
+          border: `1px solid ${themeAccentRgba}`,
+          boxShadow: `0 25px 50px rgba(0, 0, 0, 0.8), 0 0 35px ${themeShadow}`,
+        }}
       >
         {/* Close Button */}
         <button onClick={onClose} style={closeBtnStyle}>
@@ -80,7 +97,7 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
         </button>
 
         {/* Left Column - Poster */}
-        <div style={posterColumnStyle}>
+        <div style={{ ...posterColumnStyle, background: themePosterBg, borderRight: `1px solid ${themeAccentRgbaDivider}` }}>
           <img src={movie.poster} alt={movie.title} style={posterImgStyle} />
         </div>
 
@@ -88,8 +105,16 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
         <div style={detailsColumnStyle}>
           {/* Header */}
           <div style={headerStyle}>
-            <div style={badgeStyle}>HORROR VAULT</div>
-            <h2 style={titleStyle}>{movie.title.toUpperCase()}</h2>
+            <div style={{
+              ...badgeStyle,
+              background: themeAccentRgbaLight,
+              border: `1px solid ${themeAccentRgba}`,
+              color: themeAccentLight,
+            }}>{badgeLabel}</div>
+            <h2 style={{
+              ...titleStyle,
+              textShadow: `0 0 10px ${isRomcom ? 'rgba(255, 105, 180, 0.4)' : 'rgba(118, 7, 7, 0.4)'}`,
+            }}>{movie.title.toUpperCase()}</h2>
             <p style={sloganStyle}>"{movie.slogan.toUpperCase()}"</p>
           </div>
 
@@ -113,7 +138,7 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
             </div>
           </div>
 
-          <div style={dividerStyle} />
+          <div style={{ ...dividerStyle, background: themeAccentRgbaDivider }} />
 
           {/* Actions & Forms Grid */}
           <div style={interactionGridStyle}>
@@ -123,8 +148,8 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
                 onClick={handleToggleFavorite} 
                 style={{
                   ...favoriteBtnStyle,
-                  background: isFavorite ? '#760707' : 'transparent',
-                  borderColor: '#760707',
+                  background: isFavorite ? themeAccent : 'transparent',
+                  borderColor: themeAccent,
                   color: '#fff'
                 }}
               >
@@ -139,14 +164,14 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
                     <select
                       value={selectedFriend}
                       onChange={(e) => setSelectedFriend(e.target.value)}
-                      style={selectStyle}
+                      style={{ ...selectStyle, border: `1px solid ${themeInputBorder}` }}
                     >
                       <option value="">SELECT FRIEND...</option>
                       {followedFriends.map(friend => (
                         <option key={friend} value={friend}>{friend.toUpperCase()}</option>
                       ))}
                     </select>
-                    <button type="submit" style={recommendBtnStyle}>SEND</button>
+                    <button type="submit" style={{ ...recommendBtnStyle, background: themeAccent }}>SEND</button>
                   </form>
                 ) : (
                   <p style={noticeTextStyle}>FOLLOW FRIENDS IN CINE-SOCIAL TO RECOMMEND MOVIES.</p>
@@ -170,7 +195,7 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
                         onClick={() => setRating(star)}
                         style={{
                           ...starStyle,
-                          color: star <= rating ? '#ffd700' : '#444'
+                          color: star <= rating ? (isRomcom ? '#ff69b4' : '#ffd700') : '#444'
                         }}
                       >
                         ★
@@ -184,11 +209,11 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="WRITE YOUR REVIEW HERE..."
                   maxLength={150}
-                  style={textareaStyle}
+                  style={{ ...textareaStyle, border: `1px solid ${themeInputBorder}` }}
                   required
                 />
                 
-                <button type="submit" style={submitReviewBtnStyle}>
+                <button type="submit" style={{ ...submitReviewBtnStyle, background: themeAccent }}>
                   POST REVIEW
                 </button>
               </form>
