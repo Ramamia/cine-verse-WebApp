@@ -8,6 +8,7 @@ import {
 } from '../../styles/componentStyles';
 import { colors } from '../../styles/theme';
 import NicknameInput from './NicknameInput';
+import { api } from '../../services/api';
 
 const TABS = ['COLOR', 'ACCESSORIES', 'HAIR'];
 
@@ -28,6 +29,7 @@ const CATALOG = {
 const CustomizePanel = ({ config, setConfig, user, setUser, onFinish }) => {
   const [activeTab,    setActiveTab]    = useState('COLOR');
   const [selectedItem, setSelectedItem] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const hasChosenColor = config?.skin === 'pink' || config?.skin === 'green';
 
@@ -61,12 +63,24 @@ const CustomizePanel = ({ config, setConfig, user, setUser, onFinish }) => {
     (activeTab === 'HAIR'        && config?.hair === item.id) ||
     (activeTab === 'COLOR'       && config?.skin === item.id);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!user || !user.nickname || !user.nickname.trim()) {
       window.dispatchEvent(new CustomEvent('show-alert', { detail: 'PLEASE CHOOSE A NICKNAME BEFORE CONFIRMING YOUR IDENTITY.' }));
       return;
     }
-    onFinish();
+    
+    setIsSaving(true);
+    try {
+      await api.updateProfile({
+        avatar_skin: config.skin,
+        avatar_acc: config.acc
+      });
+      onFinish();
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('show-alert', { detail: 'FAILED TO UPDATE PROFILE: ' + err.message.toUpperCase() }));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -200,7 +214,9 @@ const CustomizePanel = ({ config, setConfig, user, setUser, onFinish }) => {
         setNickname={(name) => setUser(prev => ({ ...prev, nickname: name }))} 
       />
 
-      <button onClick={handleConfirm} style={customizeActionBtn}>CONFIRM IDENTITY</button>
+      <button onClick={handleConfirm} disabled={isSaving} style={{...customizeActionBtn, opacity: isSaving ? 0.7 : 1}}>
+        {isSaving ? 'SAVING...' : 'CONFIRM IDENTITY'}
+      </button>
     </motion.div>
   );
 };

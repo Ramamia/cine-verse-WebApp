@@ -84,17 +84,22 @@ const CineSocialFeed = ({ feedItems = FEED_ITEMS, following = [], onToggleFollow
 
       <h4 style={panelHeader}>CINE-SOCIAL</h4>
       <div className="feed-scrollbar" style={{ flex: 1, overflowY: 'auto', paddingRight: '5px' }}>
-        {feedItems.map(({ user, rating, comment }) => {
-          const isFollowing = following.includes(user);
+        {feedItems.map((item, idx) => {
+          const user = item.nickname || item.user || 'ANONYMOUS';
+          const userId = item.user_id || item.user;
+          const rating = typeof item.rating === 'number' ? `★ ${item.rating}` : item.rating;
+          const comment = item.comment;
+          
+          const isFollowing = following.includes(userId);
           const isCurrentUser = user && currentUser && user.toLowerCase() === currentUser.toLowerCase();
           return (
-            <div key={user} style={feedItem}>
+            <div key={item.id || idx} style={feedItem}>
               <div style={userRow}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <b>{user}</b>
                   {!isCurrentUser && (
                     <button
-                      onClick={() => onToggleFollow && onToggleFollow(user)}
+                      onClick={() => onToggleFollow && onToggleFollow(userId)}
                       style={{
                         background: isFollowing ? 'rgba(255, 255, 255, 0.1)' : 'rgba(203, 24, 108, 0.15)',
                         border: isFollowing ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(203, 24, 108, 0.5)',

@@ -1,6 +1,7 @@
-import React, { Suspense, useRef } from 'react';
+import React, { Suspense, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, Float, Environment } from '@react-three/drei';
+import { api } from '../services/api';
 
 // ─── Per-genre config ─────────────────────────────────────────────────────────
 const LOADING_DATA = {
@@ -10,7 +11,6 @@ const LOADING_DATA = {
     scale: 2.3,
     position: [0, 0, 0],
     rotation: [0, 0, 0],
-    bgImage: '/images/loadingBackgrounds/romcom_bg.png',
     accent: '#ff69b4',
   },
   horror: {
@@ -19,7 +19,6 @@ const LOADING_DATA = {
     scale: 4,
     position: [0, -0.9, 1],
     rotation: [0, 0, 0.2],
-    bgImage: '/images/loadingBackgrounds/horror_bg.png',
     accent: '#433636',
   },
   scifi: {
@@ -28,7 +27,6 @@ const LOADING_DATA = {
     scale: 0.014,
     position: [0, -2, 1],
     rotation: [0, Math.PI, 0.5],
-    bgImage: '/images/loadingBackgrounds/scifi_bg.png',
     accent: '#00d4ff',
   },
 };
@@ -56,12 +54,31 @@ function SpinningModel({ modelPath, scale, position, rotation }) {
 // ─── Loading screen ───────────────────────────────────────────────────────────
 export default function LoadingScreen({ genre }) {
   const current = LOADING_DATA[genre] ?? LOADING_DATA.romcom;
+  const [bgUrl, setBgUrl] = useState(null);
+
+  // fetch the correct loading background from the assets API
+  useEffect(() => {
+    api.getAssetsByCategory('images/loadingBackgrounds')
+      .then(res => {
+        const assets = res.assets || [];
+        // match the genre name inside the asset name, e.g. "images/loadingBackgrounds_horror_bg.png"
+        const match = assets.find(a => a.name.toLowerCase().includes(genre));
+        if (match) {
+          setBgUrl(match.url);
+        } else if (assets.length > 0) {
+          // fallback to the first available background
+          setBgUrl(assets[0].url);
+        }
+      })
+      .catch(err => console.error('Failed to load loading background:', err));
+  }, [genre]);
 
   return (
     <div
       style={{
         position: 'fixed', inset: 0, zIndex: 9999999,
-        backgroundImage: `url(${current.bgImage})`,
+        backgroundImage: bgUrl ? `url(${bgUrl})` : 'none',
+        backgroundColor: '#0a0a0a',
         backgroundSize: 'cover', backgroundPosition: 'center',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       }}
@@ -131,3 +148,4 @@ export default function LoadingScreen({ genre }) {
     </div>
   );
 }
+

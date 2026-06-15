@@ -4,9 +4,26 @@ import { useTexture, Html, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { useKeyboard } from '../hooks/useKeyboard';
 
-import { HORROR_MOVIES as MOVIES } from '../data/movies';
+import { useAppContext } from '../contexts/AppContext';
 
-function MoviePosterMesh({ movie, texture, index, onSelect }) {
+function MoviePosterMesh({ movie, index, onSelect }) {
+  const [texture, setTexture] = useState(null);
+  
+  React.useEffect(() => {
+    const url = movie.poster_url || movie.poster;
+    if (url) {
+      new THREE.TextureLoader().load(
+        url,
+        (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace;
+          setTexture(tex);
+        },
+        undefined,
+        (err) => console.error("Error loading texture for", movie.title, err)
+      );
+    }
+  }, [movie]);
+
   const [hovered, setHovered] = useState(false);
   const isLeft = movie.side === 'left';
   
@@ -70,14 +87,16 @@ function MoviePosterMesh({ movie, texture, index, onSelect }) {
       </mesh>
 
       {/* the actual poster image */}
-      <mesh position={[isLeft ? 0.045 : -0.045, 0, 0]} rotation={[0, rotY, 0]}>
-        <planeGeometry args={[1.05, 1.55]} />
-        <meshStandardMaterial 
-          map={texture} 
-          roughness={0.3} 
-          metalness={0.1} 
-        />
-      </mesh>
+      {texture && (
+        <mesh position={[isLeft ? 0.045 : -0.045, 0, 0]} rotation={[0, rotY, 0]}>
+          <planeGeometry args={[1.05, 1.55]} />
+          <meshStandardMaterial 
+            map={texture} 
+            roughness={0.3} 
+            metalness={0.1} 
+          />
+        </mesh>
+      )}
 
       {/* show the click prompt when they hover */}
       {hovered && (
@@ -106,11 +125,9 @@ function MoviePosterMesh({ movie, texture, index, onSelect }) {
 }
 
 export default function HorrorRoom({ onSelectMovie }) {
+  const { horrorMovies: MOVIES } = useAppContext();
   const { forward, backward } = useKeyboard();
   const [showEndSign, setShowEndSign] = useState(false);
-
-  // load all the poster textures at once
-  const textures = useTexture(MOVIES.map(m => m.poster));
 
   useFrame((state, delta) => {
     const speed = 6;
@@ -216,7 +233,6 @@ export default function HorrorRoom({ onSelectMovie }) {
         <MoviePosterMesh
           key={movie.id}
           movie={movie}
-          texture={textures[index]}
           index={index}
           onSelect={onSelectMovie}
         />

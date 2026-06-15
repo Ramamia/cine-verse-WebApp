@@ -11,13 +11,14 @@ import CharacterCreator from './pages/CharacterCreator';
 import HorrorRoom from './pages/HorrorRoom';
 import RomComRoom from './pages/RomComRoom';
 import ScifiRoom from './pages/ScifiRoom';
-import { HORROR_MOVIES as horrorMovies, ROMCOM_MOVIES as romcomMovies, SCIFI_MOVIES as scifiMovies } from './data/movies';
+
 import LoadingScreen   from './pages/LoadingScreen';
 
 // ui stuff
 import Header          from './components/ui/Header';
 import AuthModal       from './components/ui/AuthModal';
 import CustomizePanel  from './components/ui/CustomizePanel';
+import { api }         from './services/api';
 import SearchBar       from './components/ui/SearchBar';
 import CineSocialFeed  from './components/ui/CineSocialFeed';
 import ProfilePopup    from './components/ui/ProfilePopup';
@@ -67,6 +68,7 @@ function App() {
     config, setConfig,
     user, setUser,
     feedItems, setFeedItems,
+    movies, horrorMovies, romcomMovies, scifiMovies,
   } = useAppContext();
 
   // Derive current view from the URL
@@ -83,7 +85,7 @@ function App() {
   }
 
   const enterGenrePortal = (genreId) => {
-    setIsLoading(true);
+    setIsLoading(genreId);
     setTimeout(() => {
       setIsLoading(false);
       navigate(`/vault/${genreId}`);
@@ -93,21 +95,17 @@ function App() {
   const handleSearch = (val, genreFilter) => {
     if (!val || !val.trim()) return;
     const query = val.toLowerCase();
-    const allMovies = [
-      ...horrorMovies.map(m => ({ ...m, genreId: 'horror' })),
-      ...romcomMovies.map(m => ({ ...m, genreId: 'romcom' })),
-      ...scifiMovies.map(m => ({ ...m, genreId: 'scifi' })),
-    ];
+    const allMovies = movies;
     
     let filtered = allMovies;
-    if (genreFilter === 'HORROR') filtered = filtered.filter(m => m.genreId === 'horror');
-    else if (genreFilter === 'ROM-COM') filtered = filtered.filter(m => m.genreId === 'romcom');
-    else if (genreFilter === 'SCI-FI') filtered = filtered.filter(m => m.genreId === 'scifi');
+    if (genreFilter === 'HORROR') filtered = filtered.filter(m => m.genre === 'horror');
+    else if (genreFilter === 'ROM-COM') filtered = filtered.filter(m => m.genre === 'romcom');
+    else if (genreFilter === 'SCI-FI') filtered = filtered.filter(m => m.genre === 'scifi');
 
     const found = filtered.find(m => m.title.toLowerCase().includes(query));
     if (found) {
       setSearchError(null);
-      enterGenrePortal(found.genreId);
+      enterGenrePortal(found.genre);
       setTimeout(() => setSelectedMovie(found), 2500);
     } else {
       setSearchError("THIS MOVIE DOESN'T EXIST YET! COMING SOON.");
@@ -148,7 +146,7 @@ function App() {
         </div>
       )}
 
-      {isLoading && <LoadingScreen genre={activeGenre} />}
+      {isLoading && <LoadingScreen genre={typeof isLoading === 'string' ? isLoading : activeGenre} />}
 
       {step === 'entrance' && (
         <>
@@ -181,16 +179,21 @@ function App() {
             feedItems={feedItems}
             following={user.following} 
             currentUser={user.nickname}
-            onToggleFollow={(username) => {
-              setUser(prev => {
-                const isFollowing = prev.following.includes(username);
-                return {
-                  ...prev,
-                  following: isFollowing
-                    ? prev.following.filter(f => f !== username)
-                    : [...prev.following, username],
-                };
-              });
+            onToggleFollow={async (userId) => {
+              try {
+                await api.toggleFollow(userId);
+                setUser(prev => {
+                  const isFollowing = prev.following.includes(userId);
+                  return {
+                    ...prev,
+                    following: isFollowing
+                      ? prev.following.filter(f => f !== userId)
+                      : [...prev.following, userId],
+                  };
+                });
+              } catch (err) {
+                setGlobalAlert('FAILED TO TOGGLE FOLLOW: ' + err.message.toUpperCase());
+              }
             }} 
           />
           <SearchBar onSearch={handleSearch} />
@@ -219,16 +222,21 @@ function App() {
             feedItems={feedItems}
             following={user.following} 
             currentUser={user.nickname}
-            onToggleFollow={(username) => {
-              setUser(prev => {
-                const isFollowing = prev.following.includes(username);
-                return {
-                  ...prev,
-                  following: isFollowing
-                    ? prev.following.filter(f => f !== username)
-                    : [...prev.following, username],
-                };
-              });
+            onToggleFollow={async (userId) => {
+              try {
+                await api.toggleFollow(userId);
+                setUser(prev => {
+                  const isFollowing = prev.following.includes(userId);
+                  return {
+                    ...prev,
+                    following: isFollowing
+                      ? prev.following.filter(f => f !== userId)
+                      : [...prev.following, userId],
+                  };
+                });
+              } catch (err) {
+                setGlobalAlert('FAILED TO TOGGLE FOLLOW: ' + err.message.toUpperCase());
+              }
             }} 
           />
           

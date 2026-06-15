@@ -17,6 +17,7 @@ import {
   photoboothContainerStyle, filmStripStyle
 } from '../../styles/profilePopupStyles';
 import { useAppContext } from '../../contexts/AppContext';
+import { api } from '../../services/api';
 
 export default function ProfilePopup({ user, config, setUser, onClose }) {
   const { setGlobalAlert } = useAppContext();
@@ -74,7 +75,7 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
     }
   };
 
-  const handleAddMovie = (movie) => {
+  const handleAddMovie = async (movie) => {
     const currentMovies = user.topMovies || [];
     if (currentMovies.length >= 5) {
       setGlobalAlert('YOU CAN ONLY SELECT UP TO 5 TOP MOVIES.');
@@ -84,17 +85,31 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
       setGlobalAlert('THIS MOVIE IS ALREADY IN YOUR TOP 5.');
       return;
     }
-    setUser(prev => ({
-      ...prev,
-      topMovies: [...(prev.topMovies || []), movie]
-    }));
+    
+    const newMovies = [...currentMovies, movie];
+    try {
+      await api.updateTopMovies(newMovies.map(m => m.id));
+      setUser(prev => ({
+        ...prev,
+        topMovies: newMovies
+      }));
+    } catch (err) {
+      setGlobalAlert('FAILED TO SAVE TOP MOVIE. NOTE: CURRENTLY ONLY MOVIES IN THE DB CAN BE ADDED TO TOP 5.');
+    }
   };
 
-  const handleRemoveMovie = (movieId) => {
-    setUser(prev => ({
-      ...prev,
-      topMovies: (prev.topMovies || []).filter(m => m.id !== movieId)
-    }));
+  const handleRemoveMovie = async (movieId) => {
+    const currentMovies = user.topMovies || [];
+    const newMovies = currentMovies.filter(m => m.id !== movieId);
+    try {
+      await api.updateTopMovies(newMovies.map(m => m.id));
+      setUser(prev => ({
+        ...prev,
+        topMovies: newMovies
+      }));
+    } catch (err) {
+      setGlobalAlert('FAILED TO UPDATE TOP MOVIES: ' + err.message.toUpperCase());
+    }
   };
 
   const handleBioChange = (e) => {
@@ -175,6 +190,13 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
               <textarea
                 value={user.bio || ''}
                 onChange={handleBioChange}
+                onBlur={async (e) => {
+                  try {
+                    await api.updateProfile({ bio: e.target.value });
+                  } catch (err) {
+                    setGlobalAlert('FAILED TO SAVE BIO: ' + err.message.toUpperCase());
+                  }
+                }}
                 placeholder="ENTER YOUR CINEPHILE BIO HERE..."
                 maxLength={200}
                 style={bioTextareaStyle}
@@ -195,9 +217,9 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
                       onMouseEnter={() => setHoveredMovieId(movie.id)}
                       onMouseLeave={() => setHoveredMovieId(null)}
                     >
-                      {movie.poster ? (
+                      {movie.poster_url || movie.poster ? (
                         <img
-                          src={movie.poster}
+                          src={movie.poster_url || movie.poster}
                           alt={movie.title}
                           referrerPolicy="no-referrer"
                           style={moviePosterStyle}

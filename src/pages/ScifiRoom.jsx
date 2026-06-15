@@ -4,9 +4,26 @@ import { useTexture, Html, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { useKeyboard } from '../hooks/useKeyboard';
 
-import { SCIFI_MOVIES as MOVIES } from '../data/movies';
+import { useAppContext } from '../contexts/AppContext';
 
-function MoviePosterMesh({ movie, texture, onSelect }) {
+function MoviePosterMesh({ movie, onSelect }) {
+  const [texture, setTexture] = useState(null);
+  
+  React.useEffect(() => {
+    const url = movie.poster_url || movie.poster;
+    if (url) {
+      new THREE.TextureLoader().load(
+        url,
+        (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace;
+          setTexture(tex);
+        },
+        undefined,
+        (err) => console.error("Error loading texture for", movie.title, err)
+      );
+    }
+  }, [movie]);
+
   const [hovered, setHovered] = useState(false);
   const isLeft = movie.side === 'left';
   
@@ -62,15 +79,17 @@ function MoviePosterMesh({ movie, texture, onSelect }) {
         />
       </mesh>
 
-      {/* the movie poster itself */}
-      <mesh position={[isLeft ? 0.045 : -0.045, 0, 0]} rotation={[0, rotY, 0]}>
-        <planeGeometry args={[1.05, 1.55]} />
-        <meshStandardMaterial 
-          map={texture} 
-          roughness={0.2} 
-          metalness={0.4} 
-        />
-      </mesh>
+      {/* the actual movie poster */}
+      {texture && (
+        <mesh position={[isLeft ? 0.045 : -0.045, 0, 0]} rotation={[0, rotY, 0]}>
+          <planeGeometry args={[1.05, 1.55]} />
+          <meshStandardMaterial 
+            map={texture} 
+            roughness={0.3} 
+            metalness={0.1} 
+          />
+        </mesh>
+      )}
 
       {/* system access prompt on hover */}
       {hovered && (
@@ -99,10 +118,9 @@ function MoviePosterMesh({ movie, texture, onSelect }) {
 }
 
 export default function ScifiRoom({ onSelectMovie }) {
+  const { scifiMovies: MOVIES } = useAppContext();
   const { forward, backward } = useKeyboard();
   const [showEndSign, setShowEndSign] = useState(false);
-
-  const textures = useTexture(MOVIES.map(m => m.poster));
 
   useFrame((state, delta) => {
     // standard first person controls
@@ -214,7 +232,6 @@ export default function ScifiRoom({ onSelectMovie }) {
         <MoviePosterMesh
           key={movie.id}
           movie={movie}
-          texture={textures[index]}
           index={index}
           onSelect={onSelectMovie}
         />

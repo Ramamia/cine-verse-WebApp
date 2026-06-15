@@ -5,6 +5,7 @@ import {
   authOverlay, authGlassPanel, authToggleContainer, authSwitchBtn,
   authTitle, authSubtitle, authInput, authActionBtn,
 } from '../../styles/componentStyles';
+import { api } from '../../services/api';
 
 const THEME_RED = '#760707';
 
@@ -12,12 +13,14 @@ const AuthModal = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [nickname, setNickname] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setErrorMsg('');
     
-    if (!email || !password) {
+    if (!email || !password || (!isLogin && !nickname)) {
       setErrorMsg('PLEASE FILL IN ALL CREDENTIALS.');
       return;
     }
@@ -40,7 +43,24 @@ const AuthModal = ({ onLogin }) => {
       }
     }
 
-    onLogin({ email, password, isLogin });
+    setIsLoading(true);
+    try {
+      let data;
+      if (isLogin) {
+        data = await api.login(email, password);
+      } else {
+        data = await api.register(email, password, nickname);
+      }
+      
+      if (data.token) {
+        localStorage.setItem('cineverse_token', data.token);
+      }
+      onLogin(data.user);
+    } catch (err) {
+      setErrorMsg(err.message.toUpperCase());
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -99,6 +119,16 @@ const AuthModal = ({ onLogin }) => {
 
         {/* Fields */}
         <div style={{ width: '100%' }}>
+          {!isLogin && (
+            <input
+              type="text"
+              placeholder="NICKNAME"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              style={authInput}
+              required
+            />
+          )}
           <input
             type="email"
             placeholder="EMAIL ADDRESS"
@@ -118,8 +148,17 @@ const AuthModal = ({ onLogin }) => {
         </div>
 
         {/* CTA */}
-        <button onClick={handleSubmit} style={{ ...authActionBtn, backgroundColor: THEME_RED }}>
-          {isLogin ? 'RESUME EXPERIENCE' : 'TAKE YOUR SEAT'}
+        <button 
+          onClick={handleSubmit} 
+          disabled={isLoading}
+          style={{ 
+            ...authActionBtn, 
+            backgroundColor: THEME_RED,
+            opacity: isLoading ? 0.7 : 1,
+            cursor: isLoading ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {isLoading ? 'PROCESSING...' : (isLogin ? 'RESUME EXPERIENCE' : 'TAKE YOUR SEAT')}
         </button>
       </motion.div>
     </div>
