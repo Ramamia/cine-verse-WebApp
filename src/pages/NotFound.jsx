@@ -87,7 +87,7 @@ export default function NotFound() {
           </div>
 
           <button
-            onClick={() => navigate('/hub')}
+            onClick={() => navigate(-1)}
             style={returnBtn}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = '#760707';
