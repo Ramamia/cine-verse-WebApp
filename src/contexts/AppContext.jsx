@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 const AppContext = createContext();
 
@@ -9,8 +10,14 @@ export function AppProvider({ children }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
 
-  const [config, setConfig] = useState({ acc: null, hair: null, skin: '#ffdbac' });
+  const [movies, setMovies] = useState([]);
+  const [horrorMovies, setHorrorMovies] = useState([]);
+  const [romcomMovies, setRomcomMovies] = useState([]);
+  const [scifiMovies, setScifiMovies] = useState([]);
+
+  const [config, setConfig] = useState({ acc: null, hair: null, skin: 'baseAvatar.png' });
   const [user, setUser] = useState({
+    id: null,
     nickname: '',
     email: '',
     bio: '',
@@ -18,16 +25,58 @@ export function AppProvider({ children }) {
     following: [],
   });
 
-  const [feedItems, setFeedItems] = useState([
-    { user: 'Lara', rating: '★ 4', comment: '"The twist in Scream 6 blew my mind!"' },
-    { user: 'Fahed', rating: '★ 2.9', comment: '"I can\'t believe the ending of that movie it sucks"' },
-    { user: 'Lilia', rating: '★ 4.5', comment: '"minecraft movie was AMAZINGG"' },
-  ]);
+  const [feedItems, setFeedItems] = useState([]);
 
   useEffect(() => {
     const handleAlert = (e) => setGlobalAlert(e.detail);
     window.addEventListener('show-alert', handleAlert);
     return () => window.removeEventListener('show-alert', handleAlert);
+  }, []);
+
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        const [moviesRes, reviewsRes] = await Promise.all([
+          api.getMovies(),
+          api.getReviews()
+        ]);
+        
+        const allMovies = moviesRes.movies || [];
+        setMovies(allMovies);
+        setHorrorMovies(allMovies.filter(m => m.genre === 'horror'));
+        setRomcomMovies(allMovies.filter(m => m.genre === 'romcom'));
+        setScifiMovies(allMovies.filter(m => m.genre === 'scifi'));
+
+        setFeedItems(reviewsRes.reviews || []);
+      } catch (err) {
+        console.error('Failed to load initial data:', err);
+      }
+
+      if (localStorage.getItem('cineverse_token')) {
+        try {
+          const profileRes = await api.getProfile();
+          const u = profileRes.user;
+          setUser({
+            id: u.id,
+            nickname: u.nickname,
+            email: u.email,
+            bio: u.bio || '',
+            topMovies: u.top_movies || [],
+            following: u.followers || [],
+          });
+          setConfig({
+            skin: u.avatar_skin || 'baseAvatar.png',
+            acc: u.avatar_acc || null,
+            hair: null
+          });
+        } catch (err) {
+          console.error('Failed to fetch profile (token might be invalid):', err);
+          localStorage.removeItem('cineverse_token');
+        }
+      }
+    };
+    
+    initializeData();
   }, []);
 
   const value = {
@@ -39,6 +88,7 @@ export function AppProvider({ children }) {
     config, setConfig,
     user, setUser,
     feedItems, setFeedItems,
+    movies, horrorMovies, romcomMovies, scifiMovies
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

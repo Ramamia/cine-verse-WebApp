@@ -1,3 +1,4 @@
+/*
 export const HORROR_MOVIES = [
   {
     id: 'horror-jacobs-ladder',
@@ -450,3 +451,4 @@ export const SCIFI_MOVIES = [
     z: -25
   }
 ];
+*/

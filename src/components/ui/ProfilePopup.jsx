@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import {
@@ -17,19 +17,51 @@ import {
   photoboothContainerStyle, filmStripStyle
 } from '../../styles/profilePopupStyles';
 import { useAppContext } from '../../contexts/AppContext';
+import { api } from '../../services/api';
 
 export default function ProfilePopup({ user, config, setUser, onClose }) {
   const { setGlobalAlert } = useAppContext();
-  // figure out which static PFP to grab based on the user's config
-  const getPFPPath = (cfg) => {
+
+  // asset URLs loaded from the API
+  const [avatarAssets, setAvatarAssets] = useState({});
+  const [filmStripUrl, setFilmStripUrl] = useState(null);
+
+  // fetch avatar PFP images and film strip from the assets API
+  useEffect(() => {
+    api.getAssets('images/avatarsPFP')
+      .then(res => {
+        const assets = res.assets || [];
+        const map = {};
+        assets.forEach(a => {
+          // e.g. "images/avatarsPFP_pinkCowboyAvatar.png" → key "pinkcowboyavatar"
+          const fileName = a.name.split('_').slice(1).join('_').replace(/\.\w+$/, '').toLowerCase();
+          map[fileName] = a.url;
+        });
+        setAvatarAssets(map);
+      })
+      .catch(err => console.error('Failed to load avatar assets:', err));
+
+    // fetch the film strip decoration image
+    api.getAssets('images/filmStrip')
+      .then(res => {
+        const assets = res.assets || [];
+        if (assets.length > 0) {
+          setFilmStripUrl(assets[0].url);
+        }
+      })
+      .catch(err => console.error('Failed to load film strip:', err));
+  }, []);
+
+  // figure out which avatar PFP to use based on config
+  const getAvatarUrl = (cfg) => {
     if (cfg?.skin === 'pink') {
-      if (cfg.acc === 'cowboy') return '/images/avatarsPFP/pinkCowboyAvatar.png';
-      return '/images/avatarsPFP/pinkAvatar.png';
+      if (cfg.acc === 'cowboy') return avatarAssets['pinkcowboyavatar'] || null;
+      return avatarAssets['pinkavatar'] || null;
     } else if (cfg?.skin === 'green') {
-      if (cfg.acc === 'cowboy') return '/images/avatarsPFP/greenCowboyAvatar.png';
-      return '/images/avatarsPFP/greenAvatar.png';
+      if (cfg.acc === 'cowboy') return avatarAssets['greencowboyavatar'] || null;
+      return avatarAssets['greenavatar'] || null;
     }
-    return '/images/avatarsPFP/baseAvatar.png';
+    return avatarAssets['baseavatar'] || null;
   };
 
   // state for searching movies on IMDb
@@ -74,7 +106,7 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
     }
   };
 
-  const handleAddMovie = (movie) => {
+  const handleAddMovie = async (movie) => {
     const currentMovies = user.topMovies || [];
     if (currentMovies.length >= 5) {
       setGlobalAlert('YOU CAN ONLY SELECT UP TO 5 TOP MOVIES.');
@@ -84,17 +116,31 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
       setGlobalAlert('THIS MOVIE IS ALREADY IN YOUR TOP 5.');
       return;
     }
-    setUser(prev => ({
-      ...prev,
-      topMovies: [...(prev.topMovies || []), movie]
-    }));
+    
+    const newMovies = [...currentMovies, movie];
+    try {
+      await api.updateTopMovies(newMovies.map(m => m.id));
+      setUser(prev => ({
+        ...prev,
+        topMovies: newMovies
+      }));
+    } catch (err) {
+      setGlobalAlert('FAILED TO SAVE TOP MOVIE. NOTE: CURRENTLY ONLY MOVIES IN THE DB CAN BE ADDED TO TOP 5.');
+    }
   };
 
-  const handleRemoveMovie = (movieId) => {
-    setUser(prev => ({
-      ...prev,
-      topMovies: (prev.topMovies || []).filter(m => m.id !== movieId)
-    }));
+  const handleRemoveMovie = async (movieId) => {
+    const currentMovies = user.topMovies || [];
+    const newMovies = currentMovies.filter(m => m.id !== movieId);
+    try {
+      await api.updateTopMovies(newMovies.map(m => m.id));
+      setUser(prev => ({
+        ...prev,
+        topMovies: newMovies
+      }));
+    } catch (err) {
+      setGlobalAlert('FAILED TO UPDATE TOP MOVIES: ' + err.message.toUpperCase());
+    }
   };
 
   const handleBioChange = (e) => {
@@ -175,6 +221,13 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
               <textarea
                 value={user.bio || ''}
                 onChange={handleBioChange}
+                onBlur={async (e) => {
+                  try {
+                    await api.updateProfile({ bio: e.target.value });
+                  } catch (err) {
+                    setGlobalAlert('FAILED TO SAVE BIO: ' + err.message.toUpperCase());
+                  }
+                }}
                 placeholder="ENTER YOUR CINEPHILE BIO HERE..."
                 maxLength={200}
                 style={bioTextareaStyle}
@@ -195,9 +248,9 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
                       onMouseEnter={() => setHoveredMovieId(movie.id)}
                       onMouseLeave={() => setHoveredMovieId(null)}
                     >
-                      {movie.poster ? (
+                      {movie.poster_url || movie.poster ? (
                         <img
-                          src={movie.poster}
+                          src={movie.poster_url || movie.poster}
                           alt={movie.title}
                           referrerPolicy="no-referrer"
                           style={moviePosterStyle}
@@ -300,14 +353,32 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
 
           <div style={{ ...canvasContainerStyle, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <div style={photoboothContainerStyle}>
-              <img src="/images/avatarsPFP/film-strip.png" alt="film strip" style={filmStripStyle} />
+              {filmStripUrl && (
+                <img src={filmStripUrl} alt="film strip" style={filmStripStyle} />
+              )}
               
               <div style={photoboothFrameStyle}>
-                <img 
-                  src={getPFPPath(config)} 
-                  alt="Avatar Profile" 
-                  style={photoboothImageStyle} 
-                />
+                {getAvatarUrl(config) ? (
+                  <img 
+                    src={getAvatarUrl(config)} 
+                    alt="Avatar Profile" 
+                    style={photoboothImageStyle} 
+                  />
+                ) : (
+                  <div style={{
+                    ...photoboothImageStyle,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(118, 7, 7, 0.2)',
+                    color: '#760707',
+                    fontSize: '0.7rem',
+                    letterSpacing: '1px',
+                    fontFamily: 'monospace',
+                  }}>
+                    LOADING...
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -8,16 +8,18 @@ import {
 } from '../../styles/componentStyles';
 import { colors } from '../../styles/theme';
 import NicknameInput from './NicknameInput';
+import { api } from '../../services/api';
 
 const TABS = ['COLOR', 'ACCESSORIES', 'HAIR'];
 
-const CATALOG = {
+// default catalog structure — video URLs get populated from the API
+const DEFAULT_CATALOG = {
   ACCESSORIES: [
-    { id: 'cowboy',  name: 'Cowboy Hat',      vid: '/videos/cowboy.mp4'  },
-    { id: 'glasses', name: 'Cinema Glasses',  vid: '/videos/glasses.mp4' },
+    { id: 'cowboy',  name: 'Cowboy Hat',      vid: null },
+    { id: 'glasses', name: 'Cinema Glasses',  vid: null },
   ],
   HAIR: [
-    { id: 'marilyn', name: 'Monroe Blonde', vid: '/videos/marilyn.mp4' },
+    { id: 'marilyn', name: 'Monroe Blonde', vid: null },
   ],
   COLOR: [
     { id: 'pink',  name: 'Pink',  colorCode: '#cb186c' },
@@ -28,6 +30,36 @@ const CATALOG = {
 const CustomizePanel = ({ config, setConfig, user, setUser, onFinish }) => {
   const [activeTab,    setActiveTab]    = useState('COLOR');
   const [selectedItem, setSelectedItem] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [CATALOG, setCATALOG] = useState(DEFAULT_CATALOG);
+
+  // fetch video URLs from the assets API so we don't rely on local files
+  useEffect(() => {
+    api.getAssets('videos')
+      .then(res => {
+        const assets = res.assets || [];
+        // build a map: "cowboy" → "https://res.cloudinary.com/..."
+        const videoMap = {};
+        assets.forEach(a => {
+          // asset names look like "videos_cowboy.mp4"
+          const key = a.name.replace(/^videos_/, '').replace(/\.\w+$/, '').toLowerCase();
+          videoMap[key] = a.url;
+        });
+
+        setCATALOG(prev => ({
+          ...prev,
+          ACCESSORIES: prev.ACCESSORIES.map(item => ({
+            ...item,
+            vid: videoMap[item.id] || item.vid,
+          })),
+          HAIR: prev.HAIR.map(item => ({
+            ...item,
+            vid: videoMap[item.id] || item.vid,
+          })),
+        }));
+      })
+      .catch(err => console.error('Failed to load video assets:', err));
+  }, []);
 
   const hasChosenColor = config?.skin === 'pink' || config?.skin === 'green';
 
@@ -61,12 +93,24 @@ const CustomizePanel = ({ config, setConfig, user, setUser, onFinish }) => {
     (activeTab === 'HAIR'        && config?.hair === item.id) ||
     (activeTab === 'COLOR'       && config?.skin === item.id);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!user || !user.nickname || !user.nickname.trim()) {
       window.dispatchEvent(new CustomEvent('show-alert', { detail: 'PLEASE CHOOSE A NICKNAME BEFORE CONFIRMING YOUR IDENTITY.' }));
       return;
     }
-    onFinish();
+    
+    setIsSaving(true);
+    try {
+      await api.updateProfile({
+        avatar_skin: config.skin,
+        avatar_acc: config.acc
+      });
+      onFinish();
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('show-alert', { detail: 'FAILED TO UPDATE PROFILE: ' + err.message.toUpperCase() }));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -200,7 +244,9 @@ const CustomizePanel = ({ config, setConfig, user, setUser, onFinish }) => {
         setNickname={(name) => setUser(prev => ({ ...prev, nickname: name }))} 
       />
 
-      <button onClick={handleConfirm} style={customizeActionBtn}>CONFIRM IDENTITY</button>
+      <button onClick={handleConfirm} disabled={isSaving} style={{...customizeActionBtn, opacity: isSaving ? 0.7 : 1}}>
+        {isSaving ? 'SAVING...' : 'CONFIRM IDENTITY'}
+      </button>
     </motion.div>
   );
 };

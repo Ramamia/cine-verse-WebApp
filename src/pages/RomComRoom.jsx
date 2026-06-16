@@ -4,9 +4,26 @@ import { useTexture, Html, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { useKeyboard } from '../hooks/useKeyboard';
 
-import { ROMCOM_MOVIES as MOVIES } from '../data/movies';
+import { useAppContext } from '../contexts/AppContext';
 
-function MoviePosterMesh({ movie, texture, index, onSelect }) {
+function MoviePosterMesh({ movie, index, onSelect }) {
+  const [texture, setTexture] = useState(null);
+  
+  React.useEffect(() => {
+    const url = movie.poster_url || movie.poster;
+    if (url) {
+      new THREE.TextureLoader().load(
+        url,
+        (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace;
+          setTexture(tex);
+        },
+        undefined,
+        (err) => console.error("Error loading texture for", movie.title, err)
+      );
+    }
+  }, [movie]);
+
   const [hovered, setHovered] = useState(false);
   const isLeft = movie.side === 'left';
   
@@ -66,14 +83,16 @@ function MoviePosterMesh({ movie, texture, index, onSelect }) {
       </mesh>
 
       {/* the actual movie poster */}
-      <mesh position={[isLeft ? 0.045 : -0.045, 0, 0]} rotation={[0, rotY, 0]}>
-        <planeGeometry args={[1.05, 1.55]} />
-        <meshStandardMaterial 
-          map={texture} 
-          roughness={0.3} 
-          metalness={0.1} 
-        />
-      </mesh>
+      {texture && (
+        <mesh position={[isLeft ? 0.045 : -0.045, 0, 0]} rotation={[0, rotY, 0]}>
+          <planeGeometry args={[1.05, 1.55]} />
+          <meshStandardMaterial 
+            map={texture} 
+            roughness={0.3} 
+            metalness={0.1} 
+          />
+        </mesh>
+      )}
 
       {/* popup label when hovering */}
       {hovered && (
@@ -102,10 +121,9 @@ function MoviePosterMesh({ movie, texture, index, onSelect }) {
 }
 
 export default function RomComRoom({ onSelectMovie }) {
+  const { romcomMovies: MOVIES } = useAppContext();
   const { forward, backward } = useKeyboard();
   const [showEndSign, setShowEndSign] = useState(false);
-
-  const textures = useTexture(MOVIES.map(m => m.poster));
 
   useFrame((state, delta) => {
     const speed = 6;
@@ -212,7 +230,6 @@ export default function RomComRoom({ onSelectMovie }) {
         <MoviePosterMesh
           key={movie.id}
           movie={movie}
-          texture={textures[index]}
           index={index}
           onSelect={onSelectMovie}
         />

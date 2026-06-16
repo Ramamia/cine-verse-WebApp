@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
+import { api } from '../../services/api';
 
 export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddReview, followedFriends = [], genre = 'horror' }) {
   const [rating, setRating] = useState(5);
@@ -29,8 +30,8 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
         topMovies: [...currentFavorites, {
           id: movie.id,
           title: movie.title,
-          year: movie.year,
-          poster: movie.poster
+          year: movie.release_year || movie.year,
+          poster: movie.poster_url || movie.poster
         }]
       }));
     }
@@ -46,24 +47,25 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
     setTimeout(() => setRecommendationMessage(''), 4000);
   };
 
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!comment.trim()) {
       window.dispatchEvent(new CustomEvent('show-alert', { detail: 'PLEASE WRITE A REVIEW COMMENT.' }));
       return;
     }
     
-    // Call the parent handler to prepend this review to the dynamic feed
-    if (onAddReview) {
-      onAddReview({
-        user: user.nickname || 'ANONYMOUS',
-        rating: '★ ' + rating,
-        comment: `"${comment.trim()}" (on ${movie.title.toUpperCase()})`
-      });
-    }
+    try {
+      const newReviewData = await api.postReview(movie.id, rating, comment.trim());
+      
+      if (onAddReview) {
+        onAddReview(newReviewData.review || newReviewData);
+      }
 
-    window.dispatchEvent(new CustomEvent('show-alert', { detail: 'YOUR REVIEW HAS BEEN SUCCESSFULLY POSTED TO CINE-SOCIAL!' }));
-    setComment('');
+      window.dispatchEvent(new CustomEvent('show-alert', { detail: 'YOUR REVIEW HAS BEEN SUCCESSFULLY POSTED TO CINE-SOCIAL!' }));
+      setComment('');
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('show-alert', { detail: 'FAILED TO POST REVIEW: ' + err.message.toUpperCase() }));
+    }
   };
   // ── Theme Colors based on genre ──
   const isRomcom = genre === 'romcom';
@@ -101,7 +103,7 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
 
         {/* Left Column - Poster */}
         <div style={{ ...posterColumnStyle, background: themePosterBg, borderRight: `1px solid ${themeAccentRgbaDivider}` }}>
-          <img src={movie.poster} alt={movie.title} style={posterImgStyle} />
+          <img src={movie.poster_url || movie.poster} alt={movie.title} style={posterImgStyle} />
         </div>
 
         {/* Right Column - Details & Interactions */}
@@ -125,7 +127,7 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
           <div style={metaGridStyle}>
             <div style={metaRowStyle}>
               <span style={metaLabelStyle}>RELEASE DATE:</span>
-              <span style={metaValueStyle}>{movie.year}</span>
+              <span style={metaValueStyle}>{movie.release_year || movie.year}</span>
             </div>
             <div style={metaRowStyle}>
               <span style={metaLabelStyle}>DIRECTOR:</span>
