@@ -195,19 +195,16 @@ function App() {
           <CineSocialFeed 
             feedItems={feedItems}
             following={user.following} 
-            currentUser={user.nickname}
+            currentUser={user}
             onToggleFollow={async (userId) => {
               try {
                 await api.toggleFollow(userId);
-                setUser(prev => {
-                  const isFollowing = prev.following.includes(userId);
-                  return {
-                    ...prev,
-                    following: isFollowing
-                      ? prev.following.filter(f => f !== userId)
-                      : [...prev.following, userId],
-                  };
-                });
+                const profileRes = await api.getProfile();
+                const u = profileRes.user;
+                setUser(prev => ({
+                  ...prev,
+                  following: u.following || [],
+                }));
               } catch (err) {
                 setGlobalAlert('FAILED TO TOGGLE FOLLOW: ' + err.message.toUpperCase());
               }
@@ -238,19 +235,16 @@ function App() {
           <CineSocialFeed 
             feedItems={feedItems}
             following={user.following} 
-            currentUser={user.nickname}
+            currentUser={user}
             onToggleFollow={async (userId) => {
               try {
                 await api.toggleFollow(userId);
-                setUser(prev => {
-                  const isFollowing = prev.following.includes(userId);
-                  return {
-                    ...prev,
-                    following: isFollowing
-                      ? prev.following.filter(f => f !== userId)
-                      : [...prev.following, userId],
-                  };
-                });
+                const profileRes = await api.getProfile();
+                const u = profileRes.user;
+                setUser(prev => ({
+                  ...prev,
+                  following: u.following || [],
+                }));
               } catch (err) {
                 setGlobalAlert('FAILED TO TOGGLE FOLLOW: ' + err.message.toUpperCase());
               }

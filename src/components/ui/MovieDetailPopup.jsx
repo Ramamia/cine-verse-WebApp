@@ -58,7 +58,15 @@ export default function MovieDetailPopup({ movie, user, setUser, onClose, onAddR
       const newReviewData = await api.postReview(movie.id, rating, comment.trim());
       
       if (onAddReview) {
-        onAddReview(newReviewData.review || newReviewData);
+        const rawReview = newReviewData.review || newReviewData;
+        const reviewWithUser = {
+          ...rawReview,
+          user_nickname: user.nickname,
+          user_id: user.id,
+          movie_title: movie.title,
+          movie_poster: movie.poster_url || movie.poster,
+        };
+        onAddReview(reviewWithUser);
       }
 
       window.dispatchEvent(new CustomEvent('show-alert', { detail: 'YOUR REVIEW HAS BEEN SUCCESSFULLY POSTED TO CINE-SOCIAL!' }));

@@ -62,7 +62,7 @@ export function AppProvider({ children }) {
             email: u.email,
             bio: u.bio || '',
             topMovies: u.top_movies || [],
-            following: u.followers || [],
+            following: u.following || [],
           });
           setConfig({
             skin: u.avatar_skin || 'baseAvatar.png',

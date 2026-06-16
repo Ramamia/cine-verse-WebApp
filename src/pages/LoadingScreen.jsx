@@ -54,24 +54,8 @@ function SpinningModel({ modelPath, scale, position, rotation }) {
 // ─── Loading screen ───────────────────────────────────────────────────────────
 export default function LoadingScreen({ genre }) {
   const current = LOADING_DATA[genre] ?? LOADING_DATA.romcom;
-  const [bgUrl, setBgUrl] = useState(null);
-
-  // fetch the correct loading background from the assets API
-  useEffect(() => {
-    api.getAssetsByCategory('images/loadingBackgrounds')
-      .then(res => {
-        const assets = res.assets || [];
-        // match the genre name inside the asset name, e.g. "images/loadingBackgrounds_horror_bg.png"
-        const match = assets.find(a => a.name.toLowerCase().includes(genre));
-        if (match) {
-          setBgUrl(match.url);
-        } else if (assets.length > 0) {
-          // fallback to the first available background
-          setBgUrl(assets[0].url);
-        }
-      })
-      .catch(err => console.error('Failed to load loading background:', err));
-  }, [genre]);
+  const validatedGenre = (genre === 'horror' || genre === 'romcom' || genre === 'scifi') ? genre : 'romcom';
+  const bgUrl = `/images/loadingBackgrounds/${validatedGenre}_bg.png`;
 
   return (
     <div

@@ -90,8 +90,12 @@ const CineSocialFeed = ({ feedItems = FEED_ITEMS, following = [], onToggleFollow
           const rating = typeof item.rating === 'number' ? `★ ${item.rating}` : item.rating;
           const comment = item.comment;
           
-          const isFollowing = following.includes(userId);
-          const isCurrentUser = user && currentUser && user.toLowerCase() === currentUser.toLowerCase();
+          const isFollowing = following && following.some(f => f === userId || (f && f.id === userId));
+          
+          const currentUserId = currentUser && typeof currentUser === 'object' ? currentUser.id : null;
+          const currentNickname = currentUser && typeof currentUser === 'object' ? currentUser.nickname : currentUser;
+          const isCurrentUser = (userId && currentUserId && userId === currentUserId) || 
+                                (user && currentNickname && user.toLowerCase() === currentNickname.toLowerCase());
           return (
             <div key={item.id || idx} style={feedItem}>
               <div style={userRow}>

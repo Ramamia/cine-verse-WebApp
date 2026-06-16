@@ -36,20 +36,13 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
           // e.g. "images/avatarsPFP_pinkCowboyAvatar.png" → key "pinkcowboyavatar"
           const fileName = a.name.split('_').slice(1).join('_').replace(/\.\w+$/, '').toLowerCase();
           map[fileName] = a.url;
+          if (fileName === 'film-strip') {
+            setFilmStripUrl(a.url);
+          }
         });
         setAvatarAssets(map);
       })
       .catch(err => console.error('Failed to load avatar assets:', err));
-
-    // fetch the film strip decoration image
-    api.getAssets('images/filmStrip')
-      .then(res => {
-        const assets = res.assets || [];
-        if (assets.length > 0) {
-          setFilmStripUrl(assets[0].url);
-        }
-      })
-      .catch(err => console.error('Failed to load film strip:', err));
   }, []);
 
   // figure out which avatar PFP to use based on config
@@ -119,7 +112,7 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
     
     const newMovies = [...currentMovies, movie];
     try {
-      await api.updateTopMovies(newMovies.map(m => m.id));
+      await api.updateTopMovies(newMovies);
       setUser(prev => ({
         ...prev,
         topMovies: newMovies
@@ -133,7 +126,7 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
     const currentMovies = user.topMovies || [];
     const newMovies = currentMovies.filter(m => m.id !== movieId);
     try {
-      await api.updateTopMovies(newMovies.map(m => m.id));
+      await api.updateTopMovies(newMovies);
       setUser(prev => ({
         ...prev,
         topMovies: newMovies
@@ -209,7 +202,7 @@ export default function ProfilePopup({ user, config, setUser, onClose }) {
                 <span style={fieldLabelStyle}>FOLLOWING</span>
                 <span style={{ ...fieldValueStyle, fontSize: '0.75rem', color: '#c61a1a', letterSpacing: '1px' }}>
                   {user.following && user.following.length > 0
-                    ? user.following.join(', ').toUpperCase()
+                    ? user.following.map(f => f.nickname || f).join(', ').toUpperCase()
                     : 'NO USERS FOLLOWED YET'}
                 </span>
               </div>

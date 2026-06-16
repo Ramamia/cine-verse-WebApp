@@ -61,11 +61,11 @@ export const api = {
     return res.json();
   },
 
-  updateTopMovies: async (movieIds) => {
+  updateTopMovies: async (movies) => {
     const res = await fetch(`${API_BASE_URL}/users/top-movies`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ movie_ids: movieIds }),
+      body: JSON.stringify({ movies }),
     });
     if (!res.ok) {
       const err = await res.json();
